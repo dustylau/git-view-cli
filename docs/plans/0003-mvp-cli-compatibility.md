@@ -11,7 +11,7 @@ CLI-002 hardens `status` and `changes` under FR-002, FR-005, FR-009, and NFR-001
 3. Drive the Git invocation, transport policy, and branch detection with focused tests, then run the full fixture suite. Preserve the existing read boundary and use Git plumbing for branch identity.
 4. Send Ctrl+C in a POSIX pseudo-terminal and isolated Windows console using a controlled Git child. Verify exit 130, no snapshot, and immediate child cleanup. Run local environments and configure native CI for all six targets.
 5. Measure small (100 tracked, 10 untracked) and medium (5,000 tracked, 1,000 untracked) repositories. Include tracked edits, exclude fixture/build time, use three warmups and 20 samples per command, and record median and p95. Compare with Git porcelain status using the same read options. Target p95 at or below 400 ms and 1 s respectively for both CLI commands.
-6. Run the project gates, update docs with measured results, review the diff, and commit the branch cleanly.
+6. Run the project gates, including the Linux race detector where a C compiler is available. Update the testing docs with local results and outstanding hosted checks, review the diff, and commit the branch cleanly.
 
 ## Checklist
 
@@ -35,7 +35,13 @@ Started from clean `8e37b74`. Available environments are Windows/amd64 with Git 
 - TDD green after setting the empty transport allowlist, requesting `--ahead-behind`, and resolving ambiguous HEAD through Git's symbolic ref. `go test ./... -count=1` passed on Windows 11 amd64 and Ubuntu 24.04 WSL2 amd64 with Go 1.27.4. All 21 Gherkin scenarios passed on each. The POSIX path test passed on Linux and skipped on Windows. The partial-clone fixture checked that the source blob was absent and that inspection preserved the fixture's Git and worktree contents.
 - `terminal_smoke.py` passed with Python 3.12 on Windows and Python 3.12 under WSL2. Ctrl+C during a pending read produced exit 130 with a cancellation diagnostic and no snapshot. The Windows console and Linux pseudo-terminal both confirmed immediate child exit.
 - `npm ci`, `npm run check`, gofmt, `go vet ./...`, Staticcheck v0.8.2, `go mod verify`, and `git diff --check` passed. npm reported zero audit findings and govulncheck v1.10.0 found none. Actionlint v1.7.12 passed on the Go workflow. The Go module graph is unchanged.
-- Compiled Windows, macOS, and Linux for amd64 and arm64. No remote is configured. Native hosted jobs and macOS/arm64 runtime evidence are pending. The local WSL2 race attempt stopped before execution because cgo was disabled and the distro has no C compiler. Linux CI configures the race run.
+- Compiled Windows, macOS, and Linux for amd64 and arm64. Native hosted jobs and macOS/arm64 runtime evidence are pending. The checkout has no Git remote.
+
+### Linux race detector result
+
+On commit `999853c`, `go test -race ./... -count=1` passed on Ubuntu 24.04 WSL2 amd64 with Go 1.27.4, Git 2.43.0, and GCC 13.3.0. With `CGO_ENABLED=1`, the CLI unit tests, Git adapter tests, and acceptance suite all passed. The first attempt stopped because cgo was disabled. The second used Ubuntu compiler packages extracted to a temporary sysroot with the host package installation untouched. The workflow still calls for the race suite on hosted Linux runners.
+
+`npm test` first failed because the plan lacked this result. The existing quality workflow scenario now verifies that contributors can find it.
 
 ### Warm command timing
 

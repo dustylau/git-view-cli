@@ -43,7 +43,7 @@ Use bounded eventual assertions for real OS events rather than sleeps. Keep pure
 
 ## CI and platform claims
 
-The [Go workflow](../.github/workflows/go.yml) checks the Git floor and native Go toolchain on six runner targets. It configures the Go suite and terminal smoke test on each target, plus the race detector and advisory scan on Linux. See [GitHub's runner labels](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Local results cover Windows/amd64 and Linux/amd64 under WSL2. Hosted VM jobs, macOS, and arm64 runtime results are pending.
+The [Go workflow](../.github/workflows/go.yml) checks the Git floor and native Go toolchain on six runner targets. It configures the Go suite and terminal smoke test on each target, plus the race detector and advisory scan on Linux. See [GitHub's runner labels](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Local results cover Windows/amd64 and Linux/amd64 under WSL2. The Linux race suite passed under WSL2 with cgo and GCC. Hosted VM jobs, macOS, and arm64 runtime results are pending.
 
 Run the terminal check on Windows with `py -3 tests/acceptance/terminal_smoke.py` and on macOS or Linux with `python3 tests/acceptance/terminal_smoke.py`. The script builds the CLI and a controlled Git child in a temporary directory. It sends Ctrl+C after the child signals readiness, checks exit 130 and the cancellation diagnostic, and verifies that the child has exited. Windows uses an isolated console with captured streams. macOS and Linux use a pseudo-terminal.
 

@@ -30,11 +30,12 @@ Feature: A reviewable documentation foundation
   Scenario: Follow a documented quality workflow
     Given I read the project README
     Then these documents are available:
-      | file                                          | topic              |
-      | CONTRIBUTING.md                               | Mandatory workflow |
-      | docs/TESTING.md                               | Red/green          |
-      | SECURITY.md                                   | Trust boundaries   |
-      | docs/plans/0001-documentation-foundation.md     | Checklist          |
+      | file                                       | topic                      |
+      | CONTRIBUTING.md                            | Mandatory workflow         |
+      | docs/TESTING.md                            | Red/green                  |
+      | SECURITY.md                                | Trust boundaries           |
+      | docs/plans/0001-documentation-foundation.md | Checklist                  |
+      | docs/plans/0003-mvp-cli-compatibility.md     | Linux race detector result |
     And the contribution guide defines eleven ordered workflow steps
 
   Scenario: Follow local documentation links
