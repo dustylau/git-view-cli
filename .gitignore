@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+reports/
+dist/
+target/
+bin/
+.DS_Store
+Thumbs.db
+*.log

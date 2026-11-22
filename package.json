@@ -1,0 +1,27 @@
+{
+  "name": "git-view-cli-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Documentation tooling only; the application stack is undecided.",
+  "type": "module",
+  "engines": {
+    "node": "^22.16.0 || ^24.0.0"
+  },
+  "scripts": {
+    "test": "cucumber-js --import tests/steps/documentation.mjs tests/features/documentation.feature",
+    "lint": "markdownlint-cli2 && node --check tests/steps/documentation.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "13.3.0",
+    "markdownlint-cli2": "0.24.2",
+    "prettier": "3.10.1"
+  },
+  "overrides": {
+    "micromark-extension-math": {
+      "katex": "0.18.2"
+    }
+  }
+}
