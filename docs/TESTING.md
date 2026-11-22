@@ -2,62 +2,51 @@
 
 ## Current executable suite
 
-The repository currently contains documentation, conceptual source placeholders, and Node-based documentation development tools. No Git application exists. The current suite checks discoverability of the product/mode contracts, open Rust/Go decision, required workflow docs, and local Markdown file links.
+Use Go 1.27.4, installed Git, and Node 22.16+ in the Node 22 line or Node 24 LTS with npm. Node remains documentation tooling only; application BDD uses Godog v0.16.0. Current native evidence is Windows/amd64 with Git 2.49.0.windows.1. See [plan 0002](plans/0002-go-mvp-status.md) for actual red/green results and limits.
 
 ```sh
 npm ci
-npm test
-npm run format:check
-npm run lint
 npm run check
+gofmt -l cmd internal tests/acceptance
+go vet ./...
+go test ./...
+go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-`npm run check` combines format, Markdown lint, JavaScript syntax checking for the step bindings, and BDD. `npm run format` applies formatting. Versions are exact in `package.json` and resolved in `package-lock.json`. The Cucumber runner uses real Gherkin and step bindings, not a bespoke feature-file parser.
+`gofmt -l` must produce no output; use `gofmt -w` to fix formatting. It does not itself return failure for listed files, so CI enforces the empty result explicitly. `npm run check` combines Prettier, Markdown lint, step-binding JavaScript syntax, and four documentation BDD scenarios. `npm run format` formats documentation/tooling files. Go uses gofmt independently.
 
-The local-link scenario checks inline relative file links in project Markdown, skipping external URLs and fenced examples. It verifies file existence, not remote availability, fragment anchors, reference-style links, or semantic correctness. Human review remains necessary. It also checks newly created docs before the initial commit.
+`go test ./...` includes parser, process-boundary, and CLI unit tests plus Godog acceptance. To focus on executable BDD, run `go test ./tests/acceptance -run TestCLI -count=1 -v`. It builds a fresh binary, binds real Gherkin, and invokes the binary directly to assert exit codes and stream separation. Undefined/pending steps fail under strict mode. Fixtures isolate Git system/global configuration and identity, use synthetic data and local refs, and require no network. Read-only scenarios hash fixture files, including Git metadata, before and after invocation. This verifies content preservation, not the absence of every filesystem event.
 
-## Red/green evidence
+The documentation link scenario checks inline relative file links in project Markdown, skipping external URLs and fenced examples. It verifies file existence, not remote availability, fragment anchors, reference-style links, or semantic correctness. Human review remains necessary. Original DOC-001 evidence remains in [plan 0001](plans/0001-documentation-foundation.md).
 
-Before implementation, run the new feature and verify it fails for the intended missing behavior. Fix any harness errors before recording a valid red. For this increment, missing supporting documentation supplies the failure. Add documents in logical groups and rerun until all scenarios pass. Record actual results in the [current plan](plans/0001-documentation-foundation.md).
+## Red/green
 
-Future product features must assert observable application results against temporary repositories. A `.feature` file without executable bindings is not acceptance coverage. Undefined, pending, or skipped scenarios cannot establish acceptance. Do not leave future-product prose scenarios in the active passing suite and call the product implemented.
+Before implementing behavior, run the new executable feature and confirm failure for the intended missing behavior. Fix harness errors first. For CLI-001, an intentional CLI stub established BDD red; parser fixtures and process/discovery/CLI expectations then drove separate unit red/green loops. Documentation scenarios were updated to require the accepted Go decision and distinguish implemented commands from planned modes, and demonstrated red before updating the prose.
 
-## Application test layers after selection
+A `.feature` file without executable bindings is not coverage. Skipped scenarios cannot establish acceptance. Do not write future-product scenarios into the passing suite and call those features implemented.
 
-| Layer                | Purpose and examples                                                                                                                                      |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit                 | Status parser records, rename/NUL handling, command argument construction, state transitions, refresh coalescing, cancellation.                           |
-| Git integration      | Real temporary repositories: staged/unstaged combinations, unborn/detached HEAD, worktrees, ignored files, submodules, conflicts, binary/large files.     |
-| CLI acceptance       | Exit codes, stdout/stderr separation, no-argument status, help outside a repo, path and revision validation, plain output.                                |
-| Watch acceptance     | External changes, atomic saves, newly created directories, metadata events, overflow, polling, stale snapshots, Ctrl+C.                                   |
-| Interactive/terminal | Navigation, resize, Windows key event behavior, tool handoff, cancellation, mode transitions, terminal restoration after failures.                        |
-| Conflict acceptance  | Content/add/delete conflicts, absent stages, tool failure/success, actual unmerged index state, explicit staging and unstaging without unrelated changes. |
+## Coverage and remaining test layers
 
-Use synthetic data and per-test temporary directories. Set test-only Git author identity and configuration in those repositories; never depend on a contributor's global Git config, network, pager, editor, or credentials. Clean up child processes before removing fixtures. Include spaces, Unicode, leading dashes, and control characters where supported. Assert read-only commands leave worktree/index/config unchanged.
+| Layer                | Current evidence or future gate                                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit/process         | Porcelain records, malformed/truncated input, literal unusual path bytes, safe rendering, argument errors, stream caps, deadlines, cancellation.                       |
+| CLI acceptance       | Real clean/dirty, unborn/detached, staged/unstaged, deleted/renamed/untracked/ignored, conflict, upstream, submodule, worktree, help/version/error fixtures.           |
+| Platform paths       | Spaces, Unicode, leading dashes on Windows; parser/render tests cover tabs/newlines/control/non-UTF-8 bytes. `TestPOSIXPaths` requires native POSIX and skips Windows. |
+| Race detector        | Run `go test -race ./...` where cgo/a C compiler are available. CI configures this on Linux. Report a missing local compiler explicitly.                               |
+| Watch                | Future: external changes, atomic saves, metadata events, overflow, polling, stale results, Ctrl+C, process-tree cleanup.                                               |
+| Interactive/terminal | Future: navigation, resize, native key events, editor handoff, cancellation, mode transitions, terminal restoration.                                                   |
+| Conflict assistance  | Current listing/counts only; future tool launches and index actions require preservation, stage-state, explicit-resolution tests.                                      |
 
-Inject clock and event sources for deterministic debounce/reconciliation unit tests. Use bounded eventual assertions for real OS events rather than fixed sleeps. Keep expensive terminal smoke tests separate from deterministic rendering/state tests, and run both when terminal code changes.
-
-## Candidate quality gates
-
-These commands are planned and will become executable only after selecting a stack and adding manifests/toolchains:
-
-| Rust                                                | Go                                                                            |
-| --------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `cargo fmt --check`                                 | `gofmt` verification                                                          |
-| `cargo clippy --all-targets -- -D warnings`         | `go vet ./...` and the selected pinned linter                                 |
-| `cargo test --locked` plus cucumber-rs target       | `go test ./...` plus Godog integration                                        |
-| Selected dependency/license/advisory tooling        | Selected dependency/license/advisory tooling                                  |
-| Explicit child-process and terminal lifecycle tests | Race testing where supported, plus child-process and terminal lifecycle tests |
-
-Pin the Rust BDD target/harness and Go BDD invocation in the application bootstrap. Include all supported dependency features/build configurations in the matrix rather than assuming the defaults establish every build.
+Use bounded eventual assertions for real OS events rather than sleeps. Keep pure unit tests deterministic through injected boundaries. Each later slice must add tests for its behavior; CLI tests cannot prove terminal ownership or watcher behavior.
 
 ## CI and platform claims
 
-The [documentation workflow](../.github/workflows/documentation.yml) is configured for Windows, macOS, and Linux with read-only repository permissions, pinned action revisions, `npm ci`, and the current checks. It is configuration until executed by CI; local Windows results do not prove Linux/macOS results. Product CI and release target checks will be added after stack selection. Do not claim ARM64 runtime coverage from amd64 cross-builds.
+The [documentation workflow](../.github/workflows/documentation.yml) and [Go workflow](../.github/workflows/go.yml) configure native Windows/macOS/Linux jobs, read-only permissions, and pinned actions/tools. Go CI runs formatting, vet, Staticcheck, module verification, all tests, a Linux race run, and a vulnerability scan. No remote is configured locally, so these files are configuration rather than passing remote evidence. No macOS/Linux native or ARM64 runtime test has run in this session. Cross-builds only prove compilation.
 
 ## Dependency review
 
-Use `npm audit` when changing documentation tooling and record outstanding findings rather than applying breaking `--force` updates blindly. Production dependencies do not exist yet. Dependency advisories, their reachability, and any overrides must be recorded in the current plan and revisited with dependency updates.
+Production builds use only Go's standard library and installed Git. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.
 
-The initial dependency review found a low-severity [KaTeX advisory](https://github.com/advisories/GHSA-238p-pmpm-9mq7) through Markdown lint's math extension. A scoped npm override pins that extension's KaTeX dependency to patched `0.18.2`. This crosses the extension's original dependency range; the current lint suite and a renderer API smoke check passed. Revisit/remove the override when the upstream range includes the fix. This is development tooling, not an application runtime dependency.
+Use `npm audit` when changing documentation tooling. The foundation's scoped override pins Markdown lint's transitive KaTeX to `0.18.2` for the [KaTeX advisory](https://github.com/advisories/GHSA-238p-pmpm-9mq7). This crosses the math extension's original range; its initial renderer smoke test and lint suite passed. Revisit when upstream includes the fix. Node packages do not ship in the CLI.

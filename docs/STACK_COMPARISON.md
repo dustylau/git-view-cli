@@ -1,6 +1,6 @@
 # Rust versus Go
 
-Decision: Open. Research checked against primary project documentation on 2026-11-22. No prototype or performance benchmark has been run. Library names below are candidates, not installed application dependencies; pin compatible versions and verify licenses/advisories after selection.
+Decision: Go, explicitly selected by the maintainer on 2026-11-22. The [accepted ADR](adr/0001-application-stack.md) supersedes the comparative experiment below. No Rust prototype or comparative benchmark was run. The first CLI uses Go's standard library and Godog tests; other libraries below remain candidates. This comparison records design context, not measured performance advantages.
 
 ## Is Rust a good candidate?
 
@@ -54,7 +54,9 @@ If a later requirement needs comparison of text that Git cannot supply, first ev
 
 ## Decision experiment
 
-Run one bounded experiment per candidate in a future M1 increment, with the same fixtures and visible behavior:
+The original proposed experiment below was superseded by the maintainer's explicit Go decision. It was not executed. Its correctness, lifecycle, and portability questions remain useful acceptance work for the applicable Go milestones; a parallel Rust implementation is no longer required.
+
+Original design: run one bounded experiment per candidate with the same fixtures and visible behavior:
 
 - Discover a repo and parse NUL-delimited porcelain v2 status for clean/dirty, staged/unstaged, rename, Unicode, unborn HEAD, and linked-worktree cases.
 - Render a changes list with keyboard selection, resize handling, and a Git patch viewport. Exercise plain CLI output and selected Watch views.
@@ -67,4 +69,4 @@ Record implementation effort, unresolved lifecycle defects, clean/incremental bu
 
 Decide in this order: all functional/portability gates pass; terminal and child-process lifecycle are reliable; maintenance effort is acceptable; distribution is reproducible; measured resource costs meet agreed budgets. Budget thresholds must be set in the M1 plan before measurement. If both satisfy the gates, team fluency and measured implementation complexity should resolve the choice. Write the evidence and accepted decision into the [ADR](adr/0001-application-stack.md).
 
-No prototype was executed in DOC-001. Neither Go nor Rust is installed in the current local environment. The comparison provides enough evidence to treat both as credible candidates; it does not select the winner.
+No prototype was executed in DOC-001. Go 1.27.4 is now installed and the Go CLI is implemented in CLI-001. See [plan 0002](plans/0002-go-mvp-status.md) for actual Windows test evidence and remaining platform limitations. The language choice follows maintainer preference rather than an experiment selecting a winner.

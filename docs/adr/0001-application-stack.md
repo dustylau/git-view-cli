@@ -1,6 +1,6 @@
 # ADR 0001: application language and terminal stack
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-11-22
 
@@ -15,9 +15,11 @@ We need a portable Git terminal application with CLI, Watch, and Interactive mod
 
 The [comparison](../STACK_COMPARISON.md) records equivalent components, advantages, limitations, and primary references. Both are viable. Go's simpler initial integration and Rust's ownership/resource control are tradeoffs, not proof of a better application.
 
-## Proposed decision process
+## Decision
 
-Keep the stack decision open. Execute the same bounded decision experiment in each candidate during M1. Establish correctness, OS support, process/terminal cleanup, build reproducibility, maintenance effort, and resource budgets before choosing. Accept this ADR only after recording actual evidence and the chosen stack.
+Use Go. On 2026-11-22 the maintainer explicitly chose Go and requested implementation, superseding the planned Rust/Go experiment. Both candidates remain technically viable; this is a maintainer preference for delivery and maintainability, not a measured performance or portability result. The experiment is not an acceptance prerequisite after this decision.
+
+Start with the standard library for the CLI, Git subprocesses, parsing, and rendering. Use Godog for application BDD, alongside the existing documentation suite. Use gofmt, go vet, and Staticcheck. Pin the installed Go 1.27.4 toolchain and exact test/tool versions. Defer Cobra, terminal frameworks, and watchers until their slices justify dependencies.
 
 ## Decisions that apply to both
 
@@ -29,8 +31,8 @@ Keep the stack decision open. Execute the same bounded decision experiment in ea
 
 ## Consequences
 
-No Cargo or Go application manifest is added now. Source directories are conceptual placeholders. Node/npm tooling runs documentation acceptance and lint/format checks only. M1 will select/pin a compiler and dependencies and adapt the directory structure to the chosen language's conventions.
+Adopt `cmd/git-view/` and `internal/` packages; remove the conceptual `src/` placeholders. Commit `go.mod` and `go.sum`. Node/npm remains documentation tooling only. The first slice is read-only, plain CLI output; terminal/process-tree lifecycle for interactive tools and watchers remains unproved and must be validated when introduced.
 
-## Evidence required for acceptance
+## Evidence and revisit criteria
 
-Attach the M1 plan/results, platform test evidence, dependency/license review, measured comparison, and supported target/toolchain matrix. Record why the alternative was not selected and what evidence would justify revisiting the choice.
+The [CLI-001 plan](../plans/0002-go-mvp-status.md) records installed-toolchain evidence, dependency review, tests, and limits. No Rust prototype, comparative benchmark, native macOS/Linux run, or terminal smoke test establishes this decision. Revisit if native compatibility, required terminal lifecycle, or measured resource budgets cannot be met with maintained Go components. Release gates still require actual native evidence.

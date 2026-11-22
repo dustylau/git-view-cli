@@ -1,0 +1,43 @@
+name: Go
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Go (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Check gofmt
+        shell: bash
+        run: |
+          if [ -n "$(gofmt -l cmd internal tests/acceptance)" ]; then
+            gofmt -d cmd internal tests/acceptance
+            exit 1
+          fi
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - run: go test ./... -count=1
+      - run: go build -o bin/git-view ./cmd/git-view
+      - name: Race detector
+        if: runner.os == 'Linux'
+        run: go test -race ./... -count=1
+      - name: Vulnerability scan
+        if: runner.os == 'Linux'
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+      - run: git diff --check

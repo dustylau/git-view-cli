@@ -2,7 +2,7 @@
 
 ## Trust boundaries
 
-This planned application runs locally with the user's filesystem permissions. Repository paths, filenames, commit messages, branch names, file contents, Git configuration, and external tools can be untrusted inputs. No telemetry or remote service is planned.
+This application runs locally with the user's filesystem permissions. CLI-001 only reads status/changes through Git, disables fsmonitor helpers and optional locks, bounds subprocess output/time, and escapes displayed metadata. Repository paths, filenames, commit messages, branch names, file contents, Git configuration, and external tools can be untrusted inputs. No telemetry or remote service is planned. Navigation, external tool, and mutation safeguards below also constrain future slices.
 
 ## Required safeguards
 

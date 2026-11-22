@@ -1,6 +1,14 @@
 # Architecture
 
-Status: proposed, language-neutral architecture. Rust and Go remain under comparison; see the [ADR](adr/0001-application-stack.md).
+Status: Go selected in the [accepted ADR](adr/0001-application-stack.md). CLI-001 implements discovery, status, and changes. Monitor, terminal sessions, and external tool integration below remain planned.
+
+## Current Go implementation
+
+`cmd/git-view` owns interrupt handling and exit. `internal/cli` parses two commands, calls an injected snapshot reader, renders safe plain output, and maps errors to public exit codes. `internal/git` owns repository discovery, porcelain-v2 parsing, and direct subprocess execution. Snapshot acquisition is reusable by future modes; no widgets or framework types enter its data model. Unit tests sit beside these packages and Godog builds/runs the actual executable under `tests/acceptance`.
+
+Discovery queries `rev-parse` for worktree status, root, Git directory, and common directory. Queries strip only the final LF, preserving path whitespace. Status uses `--porcelain=v2 --branch -z --untracked-files=all --renames --ignore-submodules=none --`. The command prefix `--no-optional-locks -c core.fsmonitor=false -c core.untrackedCache=false` prevents optional index writes and automatic fsmonitor helper execution. Inherited `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_INDEX_FILE`, and `GIT_PREFIX` do not override directory selection; normal Git configuration and ownership checks still apply.
+
+Each invocation sets `GIT_NO_LAZY_FETCH=1` and `GIT_TERMINAL_PROMPT=0` to prevent implicit promisor-object downloads and credential prompts, following [Git's environment contract](https://git-scm.com/docs/git). It has a 10-second context deadline, a 16-MiB cap per output stream, and a 250-ms pipe-drain limit after process cancellation/exit. Overflow cancels the immediate subprocess and fails without partial results. This does not establish process-tree cleanup for future external tools. Paths remain byte-preserving strings; parsing splits NUL records and only fixed metadata fields, including the extra rename-source record. Rendering uses graphic string escaping. No JSON/color, raw terminal mode, shell, pager, diff helper, network command, or index mutation is used.
 
 ## Shared application core
 
@@ -50,4 +58,4 @@ Apply timeouts to background reads, bound output and memory, cancel superseded w
 
 ## Delivery
 
-Pin the selected language toolchain and dependencies after the decision experiment. Use native OS test jobs and release artifacts for each supported target. Verify external Git availability at startup. Do not equate a single application executable with a guarantee that OS libraries, terminal behavior, or external Git/editor dependencies disappear.
+The Go toolchain is pinned in `go.mod` and Godog's graph in `go.sum`; lint/advisory tool versions are pinned in CI and test instructions. Native OS test jobs are configured. Verify external Git availability when running data commands; help/version work without it. Release artifacts and supported-target declarations remain release work. Do not equate a single executable or successful cross-build with demonstrated OS/terminal compatibility.

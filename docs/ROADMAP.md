@@ -1,11 +1,11 @@
 # Delivery roadmap
 
-Every milestone follows the [mandatory workflow](../CONTRIBUTING.md). Requirements are defined in the [specification](SPECIFICATION.md). Milestones describe intended scope, not completed application behavior.
+Every milestone follows the [mandatory workflow](../CONTRIBUTING.md). Requirements are defined in the [specification](SPECIFICATION.md). MVP 0.1.0 targets a read-only status/changes CLI; broader terminal modes follow separately. A planned gate is not evidence it has passed.
 
 | Milestone                   | Scope                                                                                       | Acceptance gate                                                                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | M0: Foundation              | DOC-001: docs, directory structure, language comparison, reproducible documentation checks. | Documentation BDD first red then green; docs lint/format/link checks pass; committed clean branch.                        |
-| M1: Stack decision          | Equivalent Rust and Go experiments, native terminal/process checks, accepted ADR.           | Same bounded scenarios measured on all three OS families; choose and document stack/toolchain and dependency versions.    |
+| M1: Stack decision          | Go selected by maintainer; ADR accepted, comparative experiment superseded.                 | Pin toolchain/dependencies in CLI-001; retain native/platform and terminal gates for relevant increments.                 |
 | M2: Read-only CLI           | FR-002, FR-005, FR-009: repository discovery, status, changes, help/errors.                 | Real temporary-repo BDD covers clean/dirty, staged/unstaged, unborn/detached HEAD, worktrees, and unusual paths.          |
 | M3: Files and history       | FR-003, FR-006, FR-007: files, commits, history, Git diffs.                                 | Paginated queries and binary/large-file fallbacks pass tests; no implicit repository mutations.                           |
 | M4: Watch                   | FR-001, FR-010: selectable live views, metadata invalidation, reconciliation.               | External Git/editor changes refresh correctly; overflow/fallback/cancellation tests pass.                                 |
@@ -17,8 +17,16 @@ Ship vertical slices rather than implementing all parsing, then all UI, then all
 
 ## Outstanding decisions
 
-- Rust versus Go, based on the [decision experiment](STACK_COMPARISON.md).
-- Exact supported OS, terminal, Git, and compiler versions.
+- Go chosen in [ADR 0001](adr/0001-application-stack.md); terminal/watch dependencies remain deferred.
+- Exact supported OS/terminal/Git versions and the compiler support policy beyond pinned Go 1.27.4.
 - Configuration schema, editor-command compatibility, and JSON schema/versioning.
 - Poll/reconciliation defaults and measured responsiveness/resource budgets.
 - License, executable naming/distribution availability, and release signing approach.
+
+## MVP delivery slices
+
+1. **CLI-001 (current):** Go foundation, discovery, status, changes, safe plain output, bounded Git reads, executable BDD/TDD, native CI configuration. See [plan 0002](plans/0002-go-mvp-status.md).
+2. **CLI-002:** validate declared Git/OS prerequisites on native runners, close compatibility gaps, test cancellation in actual terminals, and decide whether a versioned JSON schema belongs in 0.1.0. Set performance budgets and measure representative repositories.
+3. **REL-001:** choose license and final executable/module/distribution identity; produce amd64/arm64 artifacts and checksums, review dependencies, document install/upgrade, and obtain release approval. Publish 0.1.0 only after native runtime gates pass. This task does not publish.
+
+M0 is complete. M1's language choice is resolved by explicit maintainer instruction. CLI-001 progress/evidence is tracked in plan 0002; M2/release are not complete merely because this slice exists. M3 through M6 follow the MVP.

@@ -2,10 +2,25 @@
 
 A portable terminal companion for inspecting and managing a local Git repository.
 
-**Status: documentation foundation. No application, installable binary, or release exists yet.**
-The executable name `git-view` is provisional. Application commands below describe planned behavior.
+**Implemented: read-only `status` and `changes` CLI in Go (0.1.0-dev). No release is published.**
+The executable name `git-view` is provisional. Watch and Interactive are planned.
 
-## Capabilities
+## Run the first slice
+
+Use Go 1.27.4 and installed Git (locally tested with Git 2.49.0.windows.1). From this checkout:
+
+```sh
+go run ./cmd/git-view
+go run ./cmd/git-view status
+go run ./cmd/git-view --repo /path/to/repository changes
+go run ./cmd/git-view --help
+```
+
+Build with `go build -o bin/git-view ./cmd/git-view` on macOS/Linux, or `go build -o bin/git-view.exe ./cmd/git-view` on Windows. Run the built executable directly to observe its documented exit codes; `go run` wraps nonzero program exits. The binary requires Git on PATH for data commands. Node is not needed to build or run it.
+
+Status discovers the worktree from the current or selected directory and reports branch/upstream and separate staged, unstaged, untracked, and conflict counts. Changes shows index/worktree codes and quoted root-relative paths, including renames. Reads are bounded, suppress optional index locks, and do not fetch or stage. See the [CLI contract](docs/CLI.md) for output, limits, escaping, and exit codes.
+
+## Planned product capabilities
 
 - Monitor a local repository and display branch, upstream, and working state.
 - Browse repository files and folders and open selected files in an editor.
@@ -21,37 +36,41 @@ The executable name `git-view` is provisional. Application commands below descri
 | Watch         | Continuously refresh views selected through arguments.     | `git-view watch --views status,changes` |
 | Interactive   | Maintain a session with access to all functions and views. | `git-view interactive`                  |
 
-Bare `git-view` will show status once. Interactive sessions will switch views, pause updates, enter a Watch presentation, and execute one-shot actions while preserving repository context.
+Bare `git-view` shows status once. The table's Watch and Interactive examples remain future commands. Planned interactive sessions will switch views, pause updates, enter a Watch presentation, and execute one-shot actions while preserving repository context.
 
 ## Stack decision
 
-**Rust and Go are both candidates; no application stack is selected.** Read the [Rust versus Go comparison](docs/STACK_COMPARISON.md) for equivalent libraries, pros and cons, and a decision experiment. The [proposed ADR](docs/adr/0001-application-stack.md) records the decision gate.
+**Go is selected by the maintainer.** The [accepted ADR](docs/adr/0001-application-stack.md) supersedes the comparative experiment; the [Rust versus Go comparison](docs/STACK_COMPARISON.md) remains design context. The current CLI uses the Go standard library; Godog is a test dependency. Terminal and watcher libraries are deferred.
 
-Both candidates will delegate repository operations to the installed Git CLI. Existing diff, pager, editor, and merge tools take priority over custom implementations. Runtime targets are Windows, macOS, and Linux; the initial architecture targets are amd64 and arm64. Exact minimum versions must be established by testing before release.
+Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. Runtime targets are Windows, macOS, and Linux on amd64/arm64. Only local Windows/amd64 tests have run; exact compatibility must be established before release.
 
 ## Documentation
 
 - [Specification](docs/SPECIFICATION.md): numbered requirements and acceptance criteria.
 - [CLI contract](docs/CLI.md): planned commands, modes, output, and errors.
 - [Architecture](docs/ARCHITECTURE.md): components and Git/tool boundaries.
-- [Repository structure](docs/STRUCTURE.md): current directories and future language layouts.
+- [Repository structure](docs/STRUCTURE.md): Go packages and test directories.
 - [Roadmap](docs/ROADMAP.md): incremental delivery gates.
-- [Current plan](docs/plans/0001-documentation-foundation.md): scope, checklist, and validation evidence.
+- [Current plan](docs/plans/0002-go-mvp-status.md): MVP scope, checklist, and validation evidence.
 - [Contributing](CONTRIBUTING.md): mandatory development workflow.
 - [Testing](docs/TESTING.md): BDD/TDD, checks, and platform verification.
 - [Security](SECURITY.md): local repository and process trust boundaries.
 
-## Verify the foundation
+## Verify the project
 
-Install Node.js 22.16 or later in the Node 22 line, or Node 24 LTS, plus npm and Git. Node is used only for documentation tooling; it does not select the application runtime.
+Install Go 1.27.4, Git, and Node.js 22.16 or later in the Node 22 line, or Node 24 LTS, plus npm. Node is used only for documentation tooling.
 
 ```sh
 npm ci
 npm run check
+go vet ./...
+go test ./...
+go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-Current checks cover documentation acceptance, local Markdown file links, formatting, and linting. There are no application tests yet. CI is configured to run these checks on Windows, macOS, and Linux; local execution alone does not demonstrate that CI has passed.
+`gofmt -l cmd internal tests/acceptance` must produce no output. Go tests include unit/process tests and executable Godog scenarios against temporary repositories. Documentation checks cover acceptance, local links, formatting, and linting. Native Windows/macOS/Linux CI is configured; local execution does not establish remote CI or ARM64 runtime coverage. See [testing guidance](docs/TESTING.md).
 
 ## Development rule
 

@@ -1,7 +1,7 @@
 # Product specification
 
-Status: proposed product contract. Application requirements are not implemented.
-Current increment: DOC-001, documentation and stack comparison.
+Status: product contract; implementation proceeds in the slices below.
+Current increment: CLI-001, Go foundation and read-only status/changes.
 
 ## Purpose
 
@@ -47,3 +47,18 @@ No replacement Git engine, custom diff algorithm, built-in three-way merge edito
 ## DOC-001 acceptance
 
 Create README, specification, CLI contract, architecture, directory guide, Rust/Go comparison, proposed ADR, roadmap, workflow, testing guide, security guidance, and a current implementation plan. Create language-neutral source placeholders and test directories. Execute a real documentation BDD feature, first red for missing documents and then green. Add reproducible lint/format/link checks and CI. Do not select Rust or Go, add application dependencies, or claim application tests pass. Commit the complete increment to `docs/project-foundation`.
+
+## MVP 0.1.0
+
+Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR-005 safeguards applicable to plain output. Release requires native Windows/macOS/Linux test evidence, an amd64/arm64 build matrix, documented prerequisites, checksums, license selection, and no unresolved release-blocking defects. CLI-001 begins this MVP; it does not publish a release or claim all-platform support. Files/history, Watch, Interactive, editor/merge handoff, and index mutations remain later increments.
+
+## CLI-001 acceptance
+
+- Use Go, as explicitly selected by the maintainer on 2026-11-22; accept ADR 0001 with the comparative experiment superseded and untested portability recorded.
+- `git-view` and `git-view status` show discovered worktree root, named/unborn/detached HEAD, upstream, locally known ahead/behind counts when available, clean/dirty state, and separate staged/unstaged/untracked/conflict counts.
+- `git-view changes` shows root-relative paths with separate index/worktree codes, rename source and destination, unmerged pairs, and submodule state. A partially staged path counts in both staged and unstaged totals; conflicts count only as conflicts. Ignored files are omitted. Clean results succeed.
+- Discover from the current directory or `--repo <directory>` (before or after the subcommand), including nested directories and linked worktrees. Reject bare/non-repositories clearly. Git ownership errors retain useful diagnostics and do not alter configuration.
+- Use Git porcelain v2 with NUL records, explicit rename detection, all untracked paths, submodule scanning, optional-lock suppression, and direct argument arrays. Do not fetch or mutate worktree/index/config. Bound each Git stream to 16 MiB and each invocation to 10 seconds; fail explicitly rather than present truncated data.
+- Preserve spaces, Unicode, leading dashes, tabs, newlines, and non-UTF-8 path bytes in parsing where the OS permits. Quote displayed paths/metadata using Go graphic string escaping so controls cannot change terminal state. Plain output contains no ANSI sequences or pager use.
+- `--help`/`-h`, `help`, and `--version` work outside repositories and without Git. Reject unknown commands/options, extra operands, and missing/empty `--repo` values with exit 2. Runtime failures exit 1; no usable worktree or missing Git exits 2; cancellation exits 130. Results use stdout and diagnostics use stderr.
+- Demonstrate real temporary-repository BDD red/green and focused TDD, run formatting/vet/selected Go linter/all current tests, update native CI, and commit the scoped work cleanly. JSON and color options require later contracts and are rejected in this slice.

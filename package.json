@@ -2,7 +2,7 @@
   "name": "git-view-cli-docs",
   "version": "0.0.0",
   "private": true,
-  "description": "Documentation tooling only; the application stack is undecided.",
+  "description": "Documentation tooling only; the application uses Go.",
   "type": "module",
   "engines": {
     "node": "^22.16.0 || ^24.0.0"

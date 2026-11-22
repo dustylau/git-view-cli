@@ -22,10 +22,15 @@ Apply every step to features, fixes, refactors, configuration, and documentation
 npm ci
 npm run format
 npm run check
+gofmt -l cmd internal tests/acceptance
+go vet ./...
+go test ./...
+go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-Node/npm is documentation development tooling only. There are no Rust or Go build commands to run yet. Follow [testing guidance](docs/TESTING.md) when adding the selected application toolchain.
+Node/npm is documentation development tooling only. Go 1.27.4 is the selected application toolchain. `gofmt -l` must produce no output (it does not itself fail for unformatted files); use `gofmt -w` to fix formatting. Follow [testing guidance](docs/TESTING.md) for executable BDD, race tests, dependencies, and platform limits.
 
 ## Definition of done
 

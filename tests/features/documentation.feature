@@ -6,24 +6,26 @@ Feature: A reviewable documentation foundation
   Scenario: Discover product and command contracts
     Given I read the project README
     Then the README describes "CLI", "Watch", and "Interactive" modes
-    And the README states that the application is not implemented
+    And the README distinguishes the implemented CLI from planned modes
     And these documents are available:
       | file                     | topic                        |
       | docs/SPECIFICATION.md    | FR-001                       |
       | docs/CLI.md              | Exit codes                   |
       | docs/ARCHITECTURE.md     | Git adapter                  |
-      | docs/STRUCTURE.md        | Language-neutral             |
+      | docs/STRUCTURE.md        | cmd/git-view                 |
       | docs/ROADMAP.md          | Acceptance gate              |
 
-  Scenario: Compare candidates without prematurely selecting a stack
+  Scenario: Discover the accepted Go decision and MVP scope
     Given I read the project README
     Then these documents are available:
       | file                                  | topic                    |
       | docs/STACK_COMPARISON.md               | Equivalent components    |
       | docs/STACK_COMPARISON.md               | Pros and cons            |
       | docs/STACK_COMPARISON.md               | Decision experiment      |
-      | docs/adr/0001-application-stack.md      | Status: Proposed         |
-    And the stack comparison keeps the application decision open
+      | docs/adr/0001-application-stack.md      | Status: Accepted         |
+      | docs/plans/0002-go-mvp-status.md        | Validation evidence      |
+      | docs/ROADMAP.md                        | MVP delivery slices      |
+    And the stack comparison records the maintainer's Go decision
 
   Scenario: Follow a documented quality workflow
     Given I read the project README

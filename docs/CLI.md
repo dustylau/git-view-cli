@@ -1,10 +1,20 @@
 # Command and mode contract
 
-Status: planned interface, not implemented. The command name `git-view` is provisional. Commands below are a design contract rather than installation instructions.
+Status: CLI-001 implements plain `status`, `changes`, help, and version. Other commands and modes below remain planned. The executable name `git-view` remains provisional.
+
+## Current slice
+
+`git-view [--repo <directory>] [status|changes]` performs one read and exits. No command means `status`. `--repo` also works after the command; `--repo=<directory>` is accepted. Help (`--help`, `-h`, or `help`) and `--version` require neither Git nor a repository. Extra operands, repeated commands, unknown flags, and missing/empty repository values fail with exit 2.
+
+Status prints repository root, branch (with unborn/detached distinction), upstream, local ahead/behind counts or `unavailable`, clean/dirty state, and staged/unstaged/untracked/conflict totals. A partially staged path contributes to both staged and unstaged totals; unmerged paths contribute only to conflicts. Changes prints index/worktree codes (`.` unchanged, `?` untracked, other letters from Git porcelain v2) and root-relative quoted paths; renames show `"source" -> "destination"`. Submodule records include Git's four-character state (`S<c><m><u>`). Ignored entries are omitted. A clean list prints `No changes.` and succeeds.
+
+Repository metadata and paths use Go graphic string quoting: Unicode graphic characters remain readable, while control/format characters, invalid UTF-8 bytes, quotes, and backslashes are escaped. Output is plain on terminals and redirected streams. No pager, ANSI styling, JSON, or color option exists yet. Each Git invocation has a 10-second deadline and a 16-MiB cap for each of stdout/stderr. Exceeding either bound fails with exit 1 and no partial result. Interrupt cancellation exits 130. Dirty/conflicted repositories still exit 0.
+
+Discovery resolves worktree root, Git directory, and common directory through Git. Bare/non-repositories and missing Git fail with exit 2; subsequent Git failures exit 1. Reads suppress optional locks and configured fsmonitor helpers. No fetch, staging, config changes, or index refresh writes are requested.
 
 ## Common options
 
-`--repo <path>` selects a working tree; default is repository discovery from the current directory. `--help` and `--version` do not require a repository. `--color auto|always|never` controls presentation; auto disables color when redirected and respects `NO_COLOR`. Diagnostics go to stderr and command results go to stdout. The first executable increment will version a JSON schema before offering `--json` on data commands.
+`--repo <path>` selects a working tree; default is repository discovery from the current directory. `--help` and `--version` do not require a repository. Diagnostics go to stderr and command results go to stdout. Planned `--color auto|always|never` will control presentation; auto will disable color when redirected and respect `NO_COLOR`. A later increment must version a JSON schema before offering `--json` on data commands.
 
 ## CLI mode
 

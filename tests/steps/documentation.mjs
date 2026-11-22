@@ -18,12 +18,13 @@ Then(
   },
 );
 
-Then("the README states that the application is not implemented", function () {
-  assert.match(
-    this.readme,
-    /No application, installable binary, or release exists/,
-  );
-});
+Then(
+  "the README distinguishes the implemented CLI from planned modes",
+  function () {
+    assert.match(this.readme, /Implemented:.*status.*changes/);
+    assert.match(this.readme, /Watch and Interactive.*planned/);
+  },
+);
 
 Then("these documents are available:", async function (table) {
   for (const { file, topic } of table.hashes()) {
@@ -33,9 +34,9 @@ Then("these documents are available:", async function (table) {
 });
 
 Then(
-  "the stack comparison keeps the application decision open",
+  "the stack comparison records the maintainer's Go decision",
   async function () {
-    assert.match(await read("docs/STACK_COMPARISON.md"), /Decision: Open/);
+    assert.match(await read("docs/STACK_COMPARISON.md"), /Decision: Go/);
   },
 );
 

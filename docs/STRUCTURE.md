@@ -1,12 +1,21 @@
 # Repository structure
 
-## Language-neutral foundation
+## Current layout
+
+Go is selected in [ADR 0001](adr/0001-application-stack.md). CLI-001 replaces the language-neutral `src/` placeholders with Go packages:
 
 ```text
 git-view-cli/
-  README.md
-  CONTRIBUTING.md
-  SECURITY.md
+  cmd/git-view/main.go
+  internal/
+    cli/                 # arguments, plain rendering, exit codes; unit tests
+    git/                 # snapshot model, porcelain parser, Git boundary; tests
+  tests/
+    acceptance/cli_test.go
+    features/
+      cli.feature
+      documentation.feature
+    steps/documentation.mjs
   docs/
     SPECIFICATION.md
     CLI.md
@@ -18,41 +27,27 @@ git-view-cli/
     adr/
     plans/
     templates/
-  src/
-    README.md
-    core/
-    git/
-    monitor/
-    terminal/
-    tools/
-  tests/
-    features/
-    steps/
-    fixtures/
-  .github/
-    workflows/
+  .github/workflows/
+    documentation.yml
+    go.yml
+  go.mod
+  go.sum
   package.json
   package-lock.json
 ```
 
-The source and fixture directories contain `.gitkeep` placeholders only. Their boundaries express responsibilities; they do not impose an application package structure before choosing a language. Node dependencies are documentation development tools only. No application manifest or executable exists.
+| Area                       | Responsibility                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `cmd/git-view/`            | Executable entry point, interrupt context, and process exit.                                    |
+| `internal/cli/`            | Standard-library argument parser, injected snapshot reader, safe plain output, public errors.   |
+| `internal/git/`            | Repository identity/status model, direct bounded Git calls, NUL-delimited porcelain-v2 parsing. |
+| `tests/acceptance/`        | Godog bindings that build/run the executable and create isolated temporary Git fixtures.        |
+| `tests/features/`          | Executable Gherkin specifications for the CLI and project documentation.                        |
+| `tests/steps/`             | Node-based documentation bindings only.                                                         |
+| `tests/fixtures/`          | Reserved for future captured samples; current repository fixtures use temporary paths.          |
+| `docs/templates/`          | Implementation-plan template for the mandatory workflow.                                        |
+| `.github/workflows/go.yml` | Configured native Go test/static checks; not proof that CI has run.                             |
 
-| Area              | Responsibility                                                           |
-| ----------------- | ------------------------------------------------------------------------ |
-| `src/core/`       | Domain models, use cases, shared session state.                          |
-| `src/git/`        | Git command adapter and machine-output parsers.                          |
-| `src/monitor/`    | Invalidation, debounce, reconciliation, polling.                         |
-| `src/terminal/`   | CLI, Watch, Interactive, terminal lifecycle and presentation.            |
-| `src/tools/`      | Explicit editor/pager/diff/merge integration.                            |
-| `tests/features/` | Executable Gherkin acceptance specifications.                            |
-| `tests/steps/`    | Documentation feature bindings; product bindings follow stack selection. |
-| `tests/fixtures/` | Future parser samples and small, synthetic repository fixtures.          |
-| `docs/templates/` | Scope plan template for the mandatory workflow.                          |
+No monitor, terminal widget, or tool-launch packages exist yet. Add `internal/core`, `monitor`, `terminal`, or `tools` only when an implementing slice needs them. Keep tests beside Go packages and avoid speculative empty package hierarchies.
 
-## After stack selection
-
-If Rust is selected, add one Cargo binary crate initially: `Cargo.toml`, committed `Cargo.lock`, pinned `rust-toolchain.toml`, and modules under `src/`. Add integration tests under `tests/`; do not introduce a multi-crate workspace until boundaries justify it.
-
-If Go is selected, migrate conceptual source directories to `cmd/git-view/` and `internal/{core,git,monitor,terminal,tools}/`, add `go.mod`/`go.sum`, and place unit tests alongside packages. Do not force Go into the provisional `src/` tree.
-
-Either migration requires an updated plan, executable failing BDD scenario, tests, CI, and this directory guide. Remove obsolete placeholders rather than retaining duplicate layouts.
+`go.mod` uses the provisional local module name `git-view-cli` because no hosting identity is configured; finalize it before release installation instructions use a remote module path. `go.sum` locks the test dependency graph. Production builds use only standard-library packages. `package.json` and its lockfile are documentation development tooling. Generated `bin/`, `dist/`, coverage, and report files are ignored.
