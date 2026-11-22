@@ -70,6 +70,20 @@ Feature: Read-only local Git inspection
     And stdout contains "State: clean"
     And the fixture is unchanged
 
+  Scenario: A branch can be named like Git's detached marker
+    Given a Git fixture "detached name"
+    When I run git-view with "status"
+    Then the exit code is 0
+    And stdout contains "Branch: \"(detached)\""
+    And the fixture is unchanged
+
+  Scenario: An unborn branch can be named like Git's detached marker
+    Given a Git fixture "unborn detached name"
+    When I run git-view with "status"
+    Then the exit code is 0
+    And stdout contains "Branch: \"(detached)\" (unborn)"
+    And the fixture is unchanged
+
   Scenario: Linked worktree selected after command
     Given a Git fixture "worktree"
     When I run git-view with "selected changes"
@@ -77,12 +91,20 @@ Feature: Read-only local Git inspection
     And stdout contains "No changes."
     And the fixture is unchanged
 
-  Scenario: Local upstream counts without fetching
+  Scenario: Local upstream counts even when Git's status preference turns them off
     Given a Git fixture "upstream"
     When I run git-view with "selected status"
     Then the exit code is 0
     And stdout contains "Upstream: \"origin/main\""
     And stdout contains "Ahead/behind: +1 -0 (local refs)"
+    And the fixture is unchanged
+
+  Scenario: A missing promisor blob cannot be fetched during rename inspection
+    Given a Git fixture "partial clone"
+    When I run git-view with "changes"
+    Then the exit code is 1
+    And stdout is empty
+    And stderr contains "git failed"
     And the fixture is unchanged
 
   Scenario: Report conflicts as successful data

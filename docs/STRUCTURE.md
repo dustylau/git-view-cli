@@ -11,7 +11,11 @@ git-view-cli/
     cli/                 # arguments, plain rendering, exit codes; unit tests
     git/                 # snapshot model, porcelain parser, Git boundary; tests
   tests/
-    acceptance/cli_test.go
+    acceptance/
+      cli_test.go
+      terminal_smoke.py
+      measure_cli.py
+      testdata/slowgit/main.go
     features/
       cli.feature
       documentation.feature
@@ -41,7 +45,7 @@ git-view-cli/
 | `cmd/git-view/`            | Executable entry point, interrupt context, and process exit.                                    |
 | `internal/cli/`            | Standard-library argument parser, injected snapshot reader, safe plain output, public errors.   |
 | `internal/git/`            | Repository identity/status model, direct bounded Git calls, NUL-delimited porcelain-v2 parsing. |
-| `tests/acceptance/`        | Godog bindings that build/run the executable and create isolated temporary Git fixtures.        |
+| `tests/acceptance/`        | Godog bindings, temporary Git fixtures, terminal smoke test, and performance measurement.       |
 | `tests/features/`          | Executable Gherkin specifications for the CLI and project documentation.                        |
 | `tests/steps/`             | Node-based documentation bindings only.                                                         |
 | `tests/fixtures/`          | Reserved for future captured samples; current repository fixtures use temporary paths.          |

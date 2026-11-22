@@ -1,6 +1,6 @@
 # Command and mode contract
 
-Status: CLI-001 implements plain `status`, `changes`, help, and version. Other commands and modes below remain planned. The executable name `git-view` remains provisional.
+Status: CLI-002 covers plain `status`, `changes`, help, and version. Other commands and modes below remain planned. The executable name `git-view` remains provisional.
 
 ## Current slice
 
@@ -12,9 +12,11 @@ Repository metadata and paths use Go graphic string quoting: Unicode graphic cha
 
 Discovery resolves worktree root, Git directory, and common directory through Git. Bare/non-repositories and missing Git fail with exit 2; subsequent Git failures exit 1. Reads suppress optional locks and configured fsmonitor helpers. No fetch, staging, config changes, or index refresh writes are requested.
 
+The MVP compatibility floor is Git 2.43.0. Status asks Git for detailed local ahead/behind counts even when `status.aheadBehind` is disabled. A branch named `(detached)` is displayed as a named branch. Git transports are disabled for reads. In a partial clone, inspection that requires a missing object fails with exit 1 and leaves stdout empty.
+
 ## Common options
 
-`--repo <path>` selects a working tree; default is repository discovery from the current directory. `--help` and `--version` do not require a repository. Diagnostics go to stderr and command results go to stdout. Planned `--color auto|always|never` will control presentation; auto will disable color when redirected and respect `NO_COLOR`. A later increment must version a JSON schema before offering `--json` on data commands.
+`--repo <path>` selects a working tree and defaults to discovery from the current directory. Help and version work outside a repository. Diagnostics go to stderr and command results go to stdout. Planned `--color auto|always|never` will control presentation, with automatic color following stream redirection and `NO_COLOR`. MVP 0.1.0 uses plain output. See the [output decision](adr/0002-mvp-output-contract.md) for JSON schema versioning and path byte preservation.
 
 ## CLI mode
 

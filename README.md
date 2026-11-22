@@ -7,7 +7,7 @@ The executable name `git-view` is provisional. Watch and Interactive are planned
 
 ## Run the first slice
 
-Use Go 1.27.4 and installed Git (locally tested with Git 2.49.0.windows.1). From this checkout:
+Use Go 1.27.4 and Git 2.43.0 or newer. Run these commands from the checkout.
 
 ```sh
 go run ./cmd/git-view
@@ -42,7 +42,7 @@ Bare `git-view` shows status once. The table's Watch and Interactive examples re
 
 **Go is selected by the maintainer.** The [accepted ADR](docs/adr/0001-application-stack.md) supersedes the comparative experiment; the [Rust versus Go comparison](docs/STACK_COMPARISON.md) remains design context. The current CLI uses the Go standard library; Godog is a test dependency. Terminal and watcher libraries are deferred.
 
-Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. Runtime targets are Windows, macOS, and Linux on amd64/arm64. Only local Windows/amd64 tests have run; exact compatibility must be established before release.
+Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. The targets are Windows, macOS, and Linux on amd64 and arm64. Local tests cover Windows 11 and Ubuntu 24.04 under WSL2 on amd64. See the compatibility plan for the native runner gates and exact results.
 
 ## Documentation
 
@@ -51,7 +51,7 @@ Git supplies repository semantics. Existing diff, pager, editor, and merge tools
 - [Architecture](docs/ARCHITECTURE.md): components and Git/tool boundaries.
 - [Repository structure](docs/STRUCTURE.md): Go packages and test directories.
 - [Roadmap](docs/ROADMAP.md): incremental delivery gates.
-- [Current plan](docs/plans/0002-go-mvp-status.md): MVP scope, checklist, and validation evidence.
+- [Current plan](docs/plans/0003-mvp-cli-compatibility.md): compatibility scope, checklist, and validation evidence.
 - [Contributing](CONTRIBUTING.md): mandatory development workflow.
 - [Testing](docs/TESTING.md): BDD/TDD, checks, and platform verification.
 - [Security](SECURITY.md): local repository and process trust boundaries.

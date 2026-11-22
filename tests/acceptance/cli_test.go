@@ -38,15 +38,20 @@ func cleanEnv() []string {
 }
 
 func (f *fixture) git(dir string, args ...string) error {
+	_, err := f.gitOutput(dir, args...)
+	return err
+}
+
+func (f *fixture) gitOutput(dir string, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir, cmd.Env = dir, f.env
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("git %v: %w: %s", args, err, out)
+		return nil, fmt.Errorf("git %v: %w: %s", args, err, out)
 	}
-	return nil
+	return out, nil
 }
 
 func (f *fixture) write(name, content string) error {
@@ -78,7 +83,11 @@ func (f *fixture) create(t *testing.T, kind string) error {
 		f.before, err = snapshot(f.root)
 		return err
 	}
-	if err := f.git(f.selected, "init", "--initial-branch=main"); err != nil {
+	branch := "main"
+	if kind == "unborn detached name" {
+		branch = "(detached)"
+	}
+	if err := f.git(f.selected, "init", "--initial-branch="+branch); err != nil {
 		return err
 	}
 	for _, args := range [][]string{{"config", "user.name", "Fixture"}, {"config", "user.email", "fixture@example.invalid"}, {"config", "commit.gpgSign", "false"}, {"config", "core.autocrlf", "false"}} {
@@ -86,7 +95,7 @@ func (f *fixture) create(t *testing.T, kind string) error {
 			return err
 		}
 	}
-	if kind != "unborn" {
+	if kind != "unborn" && kind != "unborn detached name" {
 		for name, content := range map[string]string{"tracked.txt": "base\n", "deleted.txt": "keep\n", ".gitignore": "ignored.txt\n"} {
 			if err := f.write(name, content); err != nil {
 				return err
@@ -100,7 +109,7 @@ func (f *fixture) create(t *testing.T, kind string) error {
 		}
 	}
 	switch kind {
-	case "unborn":
+	case "unborn", "unborn detached name":
 	case "nested":
 		f.cwd = filepath.Join(f.selected, "nested")
 		if err := os.Mkdir(f.cwd, 0o700); err != nil {
@@ -162,6 +171,14 @@ func (f *fixture) create(t *testing.T, kind string) error {
 		if err := f.git(f.selected, "checkout", "--detach"); err != nil {
 			return err
 		}
+	case "detached name":
+		if err := f.git(f.selected, "checkout", "-b", "(detached)"); err != nil {
+			return err
+		}
+	case "partial clone":
+		if err := f.partialClone(); err != nil {
+			return err
+		}
 	case "worktree":
 		f.selected = filepath.Join(f.root, "linked Ω tree")
 		if err := f.git(f.cwd, "worktree", "add", "-b", "linked", f.selected); err != nil {
@@ -169,6 +186,9 @@ func (f *fixture) create(t *testing.T, kind string) error {
 		}
 		f.cwd = t.TempDir()
 	case "upstream":
+		if err := f.git(f.selected, "config", "status.aheadBehind", "false"); err != nil {
+			return err
+		}
 		if err := f.git(f.selected, "remote", "add", "origin", "https://example.invalid/no-network"); err != nil {
 			return err
 		}
@@ -212,6 +232,49 @@ func (f *fixture) create(t *testing.T, kind string) error {
 	var err error
 	f.before, err = snapshot(f.root)
 	return err
+}
+
+func (f *fixture) partialClone() error {
+	source := f.selected
+	content := strings.Repeat("shared line for rename detection\n", 100)
+	if err := f.write("tracked.txt", content); err != nil {
+		return err
+	}
+	if err := f.git(source, "commit", "-am", "blob to omit"); err != nil {
+		return err
+	}
+	if err := f.git(source, "config", "uploadpack.allowFilter", "true"); err != nil {
+		return err
+	}
+	f.selected = filepath.Join(f.root, "filtered")
+	if err := f.git(f.root, "clone", "--no-local", "--no-checkout", "--filter=blob:none", source, f.selected); err != nil {
+		return err
+	}
+	f.cwd = f.selected
+	if err := f.git(f.selected, "read-tree", "HEAD"); err != nil {
+		return err
+	}
+	if err := f.git(f.selected, "rm", "--cached", "-f", "tracked.txt"); err != nil {
+		return err
+	}
+	if err := f.write("renamed.txt", content+"changed\n"); err != nil {
+		return err
+	}
+	if err := f.git(f.selected, "add", "renamed.txt"); err != nil {
+		return err
+	}
+	blob, err := f.gitOutput(source, "rev-parse", "HEAD:tracked.txt")
+	if err != nil {
+		return err
+	}
+	objects, err := f.gitOutput(f.selected, "rev-list", "--objects", "--missing=print", "HEAD")
+	if err != nil {
+		return err
+	}
+	if !bytes.Contains(objects, append([]byte{'?'}, blob...)) {
+		return fmt.Errorf("filtered clone unexpectedly contains the source blob")
+	}
+	return nil
 }
 
 func snapshot(root string) (map[string][32]byte, error) {
@@ -284,12 +347,19 @@ func TestPOSIXPaths(t *testing.T) {
 	if err := f.create(t, "unborn"); err != nil {
 		t.Fatal(err)
 	}
-	newRoot := filepath.Join(f.root, "repo\nwith\twhitespace")
+	root, err := filepath.EvalSymlinks(f.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newRoot := filepath.Join(root, "repo\nwith\twhitespace")
 	if err := os.Rename(f.selected, newRoot); err != nil {
 		t.Fatal(err)
 	}
 	f.selected, f.cwd = newRoot, newRoot
-	name := "-path Ω\tline\n\x1b[31m\xff"
+	name := "-path Ω\tline\n\x1b[31m"
+	if runtime.GOOS == "linux" {
+		name += "\xff"
+	}
 	if err := f.write(name, "content\n"); err != nil {
 		t.Fatal(err)
 	}

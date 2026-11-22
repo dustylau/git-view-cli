@@ -25,8 +25,8 @@ Ship vertical slices rather than implementing all parsing, then all UI, then all
 
 ## MVP delivery slices
 
-1. **CLI-001 (current):** Go foundation, discovery, status, changes, safe plain output, bounded Git reads, executable BDD/TDD, native CI configuration. See [plan 0002](plans/0002-go-mvp-status.md).
-2. **CLI-002:** validate declared Git/OS prerequisites on native runners, close compatibility gaps, test cancellation in actual terminals, and decide whether a versioned JSON schema belongs in 0.1.0. Set performance budgets and measure representative repositories.
+1. **CLI-001:** Go foundation, discovery, status, changes, safe plain output, bounded Git reads, executable BDD/TDD, and initial CI configuration. See [plan 0002](plans/0002-go-mvp-status.md).
+2. **CLI-002 (current):** Git 2.43.0 compatibility floor, local read safeguards, branch identity, terminal cancellation, and performance measurements. Keep the output plain for 0.1.0. Native runner results remain a release gate. See [plan 0003](plans/0003-mvp-cli-compatibility.md).
 3. **REL-001:** choose license and final executable/module/distribution identity; produce amd64/arm64 artifacts and checksums, review dependencies, document install/upgrade, and obtain release approval. Publish 0.1.0 only after native runtime gates pass. This task does not publish.
 
-M0 is complete. M1's language choice is resolved by explicit maintainer instruction. CLI-001 progress/evidence is tracked in plan 0002; M2/release are not complete merely because this slice exists. M3 through M6 follow the MVP.
+M0 and the Go decision are complete. M2 tracks native validation through CLI-002. M3 through M6 follow the MVP.

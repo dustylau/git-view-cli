@@ -2,7 +2,7 @@
 
 ## Current executable suite
 
-Use Go 1.27.4, installed Git, and Node 22.16+ in the Node 22 line or Node 24 LTS with npm. Node remains documentation tooling only; application BDD uses Godog v0.16.0. Current native evidence is Windows/amd64 with Git 2.49.0.windows.1. See [plan 0002](plans/0002-go-mvp-status.md) for actual red/green results and limits.
+Use Go 1.27.4, Git 2.43.0 or newer, and Node 22.16+ in the Node 22 line or Node 24 LTS with npm. Node serves the documentation suite. Application BDD uses Godog v0.16.0. Python 3.9 or newer runs the terminal and performance checks. See [plan 0003](plans/0003-mvp-cli-compatibility.md) for results and platform limits.
 
 ```sh
 npm ci
@@ -43,7 +43,11 @@ Use bounded eventual assertions for real OS events rather than sleeps. Keep pure
 
 ## CI and platform claims
 
-The [documentation workflow](../.github/workflows/documentation.yml) and [Go workflow](../.github/workflows/go.yml) configure native Windows/macOS/Linux jobs, read-only permissions, and pinned actions/tools. Go CI runs formatting, vet, Staticcheck, module verification, all tests, a Linux race run, and a vulnerability scan. No remote is configured locally, so these files are configuration rather than passing remote evidence. No macOS/Linux native or ARM64 runtime test has run in this session. Cross-builds only prove compilation.
+The [Go workflow](../.github/workflows/go.yml) checks the Git floor and native Go toolchain on six runner targets. It configures the Go suite and terminal smoke test on each target, plus the race detector and advisory scan on Linux. See [GitHub's runner labels](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Local results cover Windows/amd64 and Linux/amd64 under WSL2. Hosted VM jobs, macOS, and arm64 runtime results are pending.
+
+Run the terminal check on Windows with `py -3 tests/acceptance/terminal_smoke.py` and on macOS or Linux with `python3 tests/acceptance/terminal_smoke.py`. The script builds the CLI and a controlled Git child in a temporary directory. It sends Ctrl+C after the child signals readiness, checks exit 130 and the cancellation diagnostic, and verifies that the child has exited. Windows uses an isolated console with captured streams. macOS and Linux use a pseudo-terminal.
+
+Run `py -3 tests/acceptance/measure_cli.py` on Windows or `python3 tests/acceptance/measure_cli.py` on macOS/Linux. It times 20 subprocess invocations after three warmups per command on each fixture, and includes the equivalent Git query as a baseline. It reports median and p95 and checks the 400 ms small-fixture and 1 s medium-fixture p95 budgets. CI keeps timing separate from the correctness gates because runner load varies.
 
 ## Dependency review
 

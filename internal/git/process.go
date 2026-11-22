@@ -42,13 +42,13 @@ func (p Process) Run(ctx context.Context, dir string, args ...string) ([]byte, e
 	for _, item := range os.Environ() {
 		key, _, _ := strings.Cut(item, "=")
 		switch strings.ToUpper(key) {
-		case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_NO_LAZY_FETCH", "GIT_TERMINAL_PROMPT":
+		case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_NO_LAZY_FETCH", "GIT_TERMINAL_PROMPT", "GIT_ALLOW_PROTOCOL":
 			continue
 		}
 		cmd.Env = append(cmd.Env, item)
 	}
-	// A read must not fetch absent promisor objects or wait for credentials.
-	cmd.Env = append(cmd.Env, "GIT_NO_LAZY_FETCH=1", "GIT_TERMINAL_PROMPT=0")
+	// The empty transport allowlist also covers Git versions without lazy-fetch suppression.
+	cmd.Env = append(cmd.Env, "GIT_NO_LAZY_FETCH=1", "GIT_TERMINAL_PROMPT=0", "GIT_ALLOW_PROTOCOL=")
 	stdout := &boundedBuffer{limit: p.Limit, cancel: cancel}
 	stderr := &boundedBuffer{limit: p.Limit, cancel: cancel}
 	cmd.Stdout, cmd.Stderr = stdout, stderr
@@ -123,13 +123,29 @@ func Read(ctx context.Context, runner Runner, directory string) (Snapshot, error
 			return Snapshot{}, errors.New("git returned an empty repository path")
 		}
 	}
-	data, err := read(identity.Root, "status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all", "--renames", "--ignore-submodules=none", "--")
+	data, err := read(identity.Root, "status", "--porcelain=v2", "--branch", "--ahead-behind", "-z", "--untracked-files=all", "--renames", "--ignore-submodules=none", "--")
 	if err != nil {
 		return Snapshot{}, err
 	}
 	snapshot, err := ParseStatus(data)
 	if err != nil {
 		return Snapshot{}, err
+	}
+	if snapshot.Branch.Detached {
+		// Porcelain uses the same marker for a detached HEAD and a branch with this name.
+		ref, err := read(identity.Root, "symbolic-ref", "--quiet", "HEAD")
+		if err != nil {
+			var exit interface{ ExitCode() int }
+			if snapshot.Branch.Unborn || !errors.As(err, &exit) || exit.ExitCode() != 1 {
+				return Snapshot{}, err
+			}
+		} else {
+			if string(ref) != "refs/heads/(detached)\n" {
+				return Snapshot{}, errors.New("HEAD changed during status; retry the command")
+			}
+			snapshot.Branch.Name = "(detached)"
+			snapshot.Branch.Detached = false
+		}
 	}
 	snapshot.Repository = identity
 	return snapshot, nil

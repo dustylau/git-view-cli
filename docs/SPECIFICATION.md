@@ -1,7 +1,7 @@
 # Product specification
 
 Status: product contract; implementation proceeds in the slices below.
-Current increment: CLI-001, Go foundation and read-only status/changes.
+Current increment: CLI-002, compatibility and release validation for the read-only CLI.
 
 ## Purpose
 
@@ -62,3 +62,12 @@ Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR
 - Preserve spaces, Unicode, leading dashes, tabs, newlines, and non-UTF-8 path bytes in parsing where the OS permits. Quote displayed paths/metadata using Go graphic string escaping so controls cannot change terminal state. Plain output contains no ANSI sequences or pager use.
 - `--help`/`-h`, `help`, and `--version` work outside repositories and without Git. Reject unknown commands/options, extra operands, and missing/empty `--repo` values with exit 2. Runtime failures exit 1; no usable worktree or missing Git exits 2; cancellation exits 130. Results use stdout and diagnostics use stderr.
 - Demonstrate real temporary-repository BDD red/green and focused TDD, run formatting/vet/selected Go linter/all current tests, update native CI, and commit the scoped work cleanly. JSON and color options require later contracts and are rejected in this slice.
+
+## CLI-002 acceptance
+
+- Preserve FR-002, FR-005, and FR-009 across Git configurations. Request detailed ahead/behind counts even if Git's status preference suppresses them. Report a branch literally named `(detached)` as a branch.
+- For NFR-002, prohibit Git transports during reads, including when older Git retries a missing promisor object. If required objects are absent, fail clearly with exit 1 and empty stdout. A local partial-clone fixture must demonstrate that inspection cannot add objects or change Git metadata.
+- Use Git 2.43.0 as the MVP compatibility floor. Record actual Git, OS, and architecture evidence, with native CI smoke tests for the six target pairs. Keep unverified targets visible as release gates under NFR-001.
+- Verify NFR-004 with Ctrl+C during a pending Git read in a POSIX pseudo-terminal and an isolated Windows console. Expect exit 130, no status snapshot, and the immediate Git subprocess to be gone.
+- Measure warm one-shot `status` and `changes` from a built binary against a Git-only baseline on small and medium temporary repositories. The p95 budgets are 400 ms and 1 s respectively. Keep the fixture and measurement command reproducible.
+- Keep 0.1.0 output plain. Defer a JSON schema until it can contract path byte encoding and field evolution independently of the human-readable output.

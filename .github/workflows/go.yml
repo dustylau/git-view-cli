@@ -3,37 +3,65 @@ name: Go
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   check:
-    name: Go (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Go (${{ matrix.runner }}, ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - { runner: ubuntu-24.04, os: linux, arch: amd64 }
+          - { runner: ubuntu-24.04-arm, os: linux, arch: arm64 }
+          - { runner: windows-2025, os: windows, arch: amd64 }
+          - { runner: windows-11-arm, os: windows, arch: arm64 }
+          - { runner: macos-15-intel, os: darwin, arch: amd64 }
+          - { runner: macos-15, os: darwin, arch: arm64 }
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: true
-      - name: Check gofmt
-        shell: bash
+      - name: Check native toolchain and Git prerequisite
+        shell: pwsh
+        env:
+          EXPECTED_OS: ${{ matrix.os }}
+          EXPECTED_ARCH: ${{ matrix.arch }}
         run: |
-          if [ -n "$(gofmt -l cmd internal tests/acceptance)" ]; then
+          go version
+          if ((go env GOHOSTOS) -ne $env:EXPECTED_OS -or (go env GOHOSTARCH) -ne $env:EXPECTED_ARCH) {
+            throw 'Expected a native Go toolchain for this matrix entry'
+          }
+          $gitVersion = git --version
+          Write-Output $gitVersion
+          if ($gitVersion -notmatch '^git version (\d+\.\d+\.\d+)' -or [version]$Matches[1] -lt [version]'2.43.0') {
+            throw 'Git 2.43.0 or newer is required'
+          }
+      - name: Check gofmt
+        shell: pwsh
+        run: |
+          if (gofmt -l cmd internal tests/acceptance) {
             gofmt -d cmd internal tests/acceptance
-            exit 1
-          fi
+            throw 'Run gofmt on the listed Go files'
+          }
       - run: go mod verify
       - run: go vet ./...
       - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
       - run: go test ./... -count=1
       - run: go build -o bin/git-view ./cmd/git-view
+      - name: Terminal Ctrl+C smoke test on Windows
+        if: runner.os == 'Windows'
+        run: python tests/acceptance/terminal_smoke.py
+      - name: Terminal Ctrl+C smoke test on POSIX
+        if: runner.os != 'Windows'
+        run: python3 tests/acceptance/terminal_smoke.py
       - name: Race detector
         if: runner.os == 'Linux'
         run: go test -race ./... -count=1

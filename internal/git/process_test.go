@@ -34,6 +34,8 @@ func TestProcessHelper(t *testing.T) {
 			for _, key := range []string{"GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_NO_LAZY_FETCH", "GIT_TERMINAL_PROMPT"} {
 				values = append(values, os.Getenv(key))
 			}
+			protocol, present := os.LookupEnv("GIT_ALLOW_PROTOCOL")
+			values = append(values, protocol, fmt.Sprint(present))
 			fmt.Print(strings.Join(values, "|"))
 		}
 		os.Exit(0)
@@ -59,8 +61,9 @@ func TestProcess(t *testing.T) {
 		}
 		t.Setenv("GIT_NO_LAZY_FETCH", "0")
 		t.Setenv("GIT_TERMINAL_PROMPT", "1")
+		t.Setenv("GIT_ALLOW_PROTOCOL", "file:https")
 		got, err := p.Run(context.Background(), "", append(args, "readenv")...)
-		if err != nil || string(got) != "|||||1|0" {
+		if err != nil || string(got) != "|||||1|0||true" {
 			t.Fatalf("got %q %v", got, err)
 		}
 	})
@@ -109,10 +112,11 @@ func TestProcess(t *testing.T) {
 }
 
 type fakeRunner struct {
-	calls   [][]string
-	dirs    []string
-	results [][]byte
-	err     error
+	calls    [][]string
+	dirs     []string
+	results  [][]byte
+	err      error
+	finalErr error
 }
 
 func (f *fakeRunner) Run(_ context.Context, dir string, args ...string) ([]byte, error) {
@@ -126,6 +130,9 @@ func (f *fakeRunner) Run(_ context.Context, dir string, args ...string) ([]byte,
 	}
 	result := f.results[0]
 	f.results = f.results[1:]
+	if len(f.results) == 0 && f.finalErr != nil {
+		return nil, f.finalErr
+	}
 	return result, nil
 }
 
@@ -138,12 +145,40 @@ func TestRead(t *testing.T) {
 	if got.Repository != (Repository{Root: "/root with\nnewline", GitDir: "/metadata/worktrees/linked", CommonDir: "/metadata"}) {
 		t.Fatalf("identity: %#v", got.Repository)
 	}
-	want := []string{"--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "status", "--porcelain=v2", "--branch", "-z", "--untracked-files=all", "--renames", "--ignore-submodules=none", "--"}
+	want := []string{"--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "status", "--porcelain=v2", "--branch", "--ahead-behind", "-z", "--untracked-files=all", "--renames", "--ignore-submodules=none", "--"}
 	if !reflect.DeepEqual(f.calls[len(f.calls)-1], want) {
 		t.Fatalf("status args %v", f.calls)
 	}
 	if f.dirs[len(f.dirs)-1] != got.Repository.Root {
 		t.Fatalf("status dir %q", f.dirs)
+	}
+}
+
+type gitExitOne struct{}
+
+func (gitExitOne) Error() string { return "exit status 1" }
+func (gitExitOne) ExitCode() int { return 1 }
+
+func TestReadAmbiguousBranch(t *testing.T) {
+	for _, tc := range []struct {
+		name, oid, ref string
+		err            error
+		want           Branch
+	}{
+		{"detached", "abc", "", fmt.Errorf("git failed: %w", gitExitOne{}), Branch{OID: "abc", Detached: true}},
+		{"named", "abc", "refs/heads/(detached)\n", nil, Branch{OID: "abc", Name: "(detached)"}},
+		{"unborn", "(initial)", "refs/heads/(detached)\n", nil, Branch{Unborn: true, Name: "(detached)"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runner := &fakeRunner{results: [][]byte{
+				[]byte("true\n"), []byte("/root\n"), []byte("/root/.git\n"), []byte("/root/.git\n"),
+				[]byte("# branch.oid " + tc.oid + "\x00# branch.head (detached)\x00"), []byte(tc.ref),
+			}, finalErr: tc.err}
+			got, err := Read(context.Background(), runner, "/root")
+			if err != nil || got.Branch != tc.want {
+				t.Fatalf("branch %+v, err %v, want %+v", got.Branch, err, tc.want)
+			}
+		})
 	}
 }
 
