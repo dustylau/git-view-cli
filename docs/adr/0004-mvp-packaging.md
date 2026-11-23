@@ -8,4 +8,6 @@ Set the candidate version with the [Go linker's `-X` option](https://pkg.go.dev/
 
 The package command stages all files before placing them in the destination. Native validation, license selection, and publication approval follow the release policy.
 
+Include the installed toolchain's [Go license](https://go.dev/LICENSE) and [patent grant](https://go.dev/PATENTS) in every archive to carry Go's distribution notices with the statically linked executable. Resolve the toolchain in the build environment and preserve the notice files byte for byte.
+
 Build the candidate once for a native verification run. Pass it between jobs by its [GitHub Actions workflow artifact](https://docs.github.com/en/actions/tutorials/store-and-share-data) ID. Checking the same archive bytes on each target ties results to the candidate that was actually tested. Dispatch is explicit and the workflow's credentials have read-only repository access.

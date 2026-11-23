@@ -26,11 +26,12 @@ VERSION = re.compile(
 )
 
 
+def go_environment():
+    return dict(os.environ, CGO_ENABLED="0", GOFLAGS="", GOEXPERIMENT="", GOWORK="off")
+
+
 def build_target(os_name, arch, version, binary):
-    env = dict(
-        os.environ, GOOS=os_name, GOARCH=arch, GOAMD64="v1", GOARM64="v8.0",
-        CGO_ENABLED="0", GOFLAGS="", GOEXPERIMENT="", GOWORK="off",
-    )
+    env = dict(go_environment(), GOOS=os_name, GOARCH=arch, GOAMD64="v1", GOARM64="v8.0")
     print(f"Building {os_name}/{arch}", flush=True)
     subprocess.run(
         [
@@ -42,12 +43,26 @@ def build_target(os_name, arch, version, binary):
     )
 
 
-def write_zip(archive, binary, instructions):
+def distribution_documents():
+    go_root = Path(subprocess.check_output(
+        ["go", "env", "GOROOT"], cwd=ROOT, env=go_environment(), text=True, encoding="utf-8",
+    ).strip())
+    instructions = (ROOT / "docs/INSTALL.md").read_text(encoding="utf-8").encode("utf-8")
+    documents = {"INSTALL.md": instructions}
+    for name in ("LICENSE", "PATENTS"):
+        notice = go_root / name
+        contents = notice.read_bytes()
+        if not contents.strip():
+            raise OSError(f"Go toolchain notice is empty: {notice}")
+        documents[f"licenses/go/{name}"] = contents
+    return documents
+
+
+def write_zip(archive, binary, documents):
+    files = [(name, contents, 0o644) for name, contents in documents.items()]
+    files.append((binary.name, binary.read_bytes(), 0o755))
     with zipfile.ZipFile(archive, "w") as target:
-        for name, contents, mode in (
-            ("INSTALL.md", instructions, 0o644),
-            (binary.name, binary.read_bytes(), 0o755),
-        ):
+        for name, contents, mode in files:
             info = zipfile.ZipInfo(name)
             info.create_system = 3
             info.external_attr = (stat.S_IFREG | mode) << 16
@@ -61,7 +76,7 @@ def package_release(version, output, build=build_target):
     candidate = output.resolve() / stem
     if candidate.exists() or candidate.is_symlink():
         raise FileExistsError(f"candidate already exists: {candidate}")
-    instructions = (ROOT / "docs/INSTALL.md").read_text(encoding="utf-8").encode("utf-8")
+    documents = distribution_documents()
     candidate.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".git-view-build-", dir=candidate.parent) as directory:
         scratch = Path(directory)
@@ -73,7 +88,7 @@ def package_release(version, output, build=build_target):
             build(os_name, arch, version, binary)
             filename = f"{stem}-{os_name}-{arch}.zip"
             archive = staged / filename
-            write_zip(archive, binary, instructions)
+            write_zip(archive, binary, documents)
             checksums.append(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}  {filename}\n")
         (staged / "SHA256SUMS").write_bytes("".join(checksums).encode("ascii"))
         if candidate.exists() or candidate.is_symlink():
@@ -92,7 +107,7 @@ def main():
     except ValueError as err:
         parser.error(str(err))
     except subprocess.CalledProcessError as err:
-        print(f"Go build failed with exit code {err.returncode}.", file=sys.stderr)
+        print(f"Go command failed with exit code {err.returncode}.", file=sys.stderr)
         return err.returncode
     except OSError as err:
         print(f"Could not package the candidate: {err}", file=sys.stderr)

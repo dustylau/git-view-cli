@@ -53,7 +53,11 @@ func TestReleasePackaging(t *testing.T) {
 				}
 				return nil
 			})
-			sc.Step(`^the candidate archives cover exactly:$`, func(table *godog.Table) error {
+			sc.Step(`^the candidate archives include the Go notices and cover exactly:$`, func(table *godog.Table) error {
+				notices, err := installedGoNotices()
+				if err != nil {
+					return err
+				}
 				entries, err := os.ReadDir(candidate)
 				if err != nil {
 					return err
@@ -69,7 +73,7 @@ func TestReleasePackaging(t *testing.T) {
 						return err
 					}
 					checksums = append(checksums, fmt.Sprintf("%x  %s", sha256.Sum256(archive), name))
-					binary, err := inspectArchive(archive, osName, arch)
+					binary, err := inspectArchive(archive, osName, arch, notices)
 					if err != nil {
 						return fmt.Errorf("%s: %w", name, err)
 					}
@@ -158,13 +162,39 @@ func executableName(osName string) string {
 	return "git-view"
 }
 
-func inspectArchive(data []byte, osName, arch string) ([]byte, error) {
+func installedGoNotices() (map[string][]byte, error) {
+	out, err := exec.Command("go", "env", "GOROOT").Output()
+	if err != nil {
+		return nil, fmt.Errorf("resolve Go toolchain: %w", err)
+	}
+	root := strings.TrimSpace(string(out))
+	notices := make(map[string][]byte)
+	for _, name := range []string{"LICENSE", "PATENTS"} {
+		data, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil {
+			return nil, err
+		}
+		notices["licenses/go/"+name] = data
+	}
+	return notices, nil
+}
+
+func inspectArchive(data []byte, osName, arch string, notices map[string][]byte) ([]byte, error) {
 	z, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
 	}
-	if len(z.File) != 2 {
-		return nil, fmt.Errorf("expected two archive entries, got %d", len(z.File))
+	for name, want := range notices {
+		got, err := fs.ReadFile(z, name)
+		if err != nil {
+			return nil, err
+		}
+		if !bytes.Equal(got, want) {
+			return nil, fmt.Errorf("%s differs from the Go toolchain notice", name)
+		}
+	}
+	if count := len(notices) + 2; len(z.File) != count {
+		return nil, fmt.Errorf("expected %d archive entries, got %d", count, len(z.File))
 	}
 	if _, err := fs.Stat(z, "INSTALL.md"); err != nil {
 		return nil, err

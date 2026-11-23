@@ -69,18 +69,18 @@ Run the host-side runner tests with `python3 -B -m unittest discover -s tests/co
 
 ## Release candidate packaging
 
-Run the packaging unit tests with `python3 -B -m unittest discover -s tools/release`. To build and inspect all four candidate archives in an acceptance test, set `GIT_VIEW_RELEASE_TEST=1` and run `go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v` on a Windows or Linux host. The scenario checks each PE or ELF architecture, Linux executable permissions, archive contents, and checksums. It runs the extracted host executable with `--version`, `status`, and `changes` and compares the worktree and Git metadata before and after each repository read.
+Run the packaging unit tests with `python3 -B -m unittest discover -s tools/release`. To build and inspect all four candidate archives in an acceptance test, set `GIT_VIEW_RELEASE_TEST=1` and run `go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v` on a Windows or Linux host. The scenario checks each PE or ELF architecture, Linux executable permissions, archive contents, and checksums. It compares the bundled Go notices byte for byte with the pinned toolchain files. It runs the extracted host executable with `--version`, `status`, and `changes` and compares the worktree and Git metadata before and after each repository read.
 
 To check a prebuilt candidate from the project root, set `GIT_VIEW_RELEASE_DIR` to the absolute path of the directory containing the four ZIPs and `SHA256SUMS`. Set `GIT_VIEW_RELEASE_VERSION` to the expected version. For example, in PowerShell:
 
 ```powershell
 $env:GIT_VIEW_RELEASE_TEST = '1'
-$env:GIT_VIEW_RELEASE_VERSION = '0.1.0-rc.1'
-$env:GIT_VIEW_RELEASE_DIR = (Resolve-Path 'dist/git-view-0.1.0-rc.1').Path
+$env:GIT_VIEW_RELEASE_VERSION = '0.1.0-rc.3'
+$env:GIT_VIEW_RELEASE_DIR = (Resolve-Path 'dist/git-view-0.1.0-rc.3').Path
 go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v
 ```
 
-On Linux, export the same variables with `GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-0.1.0-rc.1"`. With `GIT_VIEW_RELEASE_DIR` unset, the test builds into a temporary directory. `GIT_VIEW_RELEASE_VERSION` defaults to `0.1.0-rc.1`.
+On Linux, export the same variables with `GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-0.1.0-rc.3"`. With `GIT_VIEW_RELEASE_DIR` unset, the test builds into a temporary directory. `GIT_VIEW_RELEASE_VERSION` defaults to `0.1.0-rc.1`.
 
 After the [Release candidate workflow](../.github/workflows/release-candidate.yml) is available in the GitHub repository's default branch, dispatch it from the Actions tab with a branch and version. The build job uploads one artifact. All four verification jobs download it by ID and validate the same archive bytes. Use the workflow run and its revision to record candidate evidence. See [GitHub's manual dispatch requirements](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
 

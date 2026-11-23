@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from package_release import package_release
 
@@ -11,6 +12,13 @@ class PackageReleaseTests(unittest.TestCase):
         self.scratch = tempfile.TemporaryDirectory()
         self.addCleanup(self.scratch.cleanup)
         self.out = Path(self.scratch.name) / "dist"
+        self.goroot = Path(self.scratch.name) / "go"
+        self.goroot.mkdir()
+        for name in ("LICENSE", "PATENTS"):
+            (self.goroot / name).write_bytes(name.encode("ascii"))
+        go_env = patch("package_release.subprocess.check_output", return_value=f"{self.goroot}\n")
+        go_env.start()
+        self.addCleanup(go_env.stop)
 
     def test_invalid_version_does_not_create_output(self):
         with self.assertRaises(ValueError):
@@ -35,6 +43,18 @@ class PackageReleaseTests(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             package_release("0.1.0-rc.1", self.out, build=fail_second_build)
         self.assertEqual(list(self.out.iterdir()), [])
+
+    def test_missing_go_license_fails_before_build(self):
+        (self.goroot / "LICENSE").unlink()
+        with self.assertRaisesRegex(OSError, "LICENSE"):
+            package_release("0.1.0-rc.1", self.out, build=self.unexpected_build)
+        self.assertFalse(self.out.exists())
+
+    def test_blank_go_patent_notice_fails_before_build(self):
+        (self.goroot / "PATENTS").write_bytes(b" \n")
+        with self.assertRaisesRegex(OSError, "PATENTS"):
+            package_release("0.1.0-rc.1", self.out, build=self.unexpected_build)
+        self.assertFalse(self.out.exists())
 
     def unexpected_build(self, *args):
         self.fail("validation should have stopped before calling Go")

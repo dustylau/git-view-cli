@@ -36,10 +36,10 @@ Use `python3` in place of `py -3` on Linux or macOS. See [container test details
 With Go 1.27.4 and Python 3.9 or newer, run the packager from the checkout.
 
 ```powershell
-py -3 tools/release/package_release.py --version 0.1.0-rc.1
+py -3 tools/release/package_release.py --version 0.1.0-rc.3
 ```
 
-On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-0.1.0-rc.1/`. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
+On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-0.1.0-rc.3/`. Each archive includes the Go toolchain notices. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
 
 The [candidate verification guide](docs/TESTING.md#release-candidate-packaging) describes checking an existing set locally or running the release-candidate workflow on the four MVP runners.
 

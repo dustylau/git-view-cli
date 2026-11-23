@@ -83,7 +83,8 @@ Release requires native test evidence and builds for `windows/amd64`, `windows/a
 
 ## REL-001 local candidate packaging
 
-- Build four ZIP archives for the MVP targets. Each contains its platform's executable and installation instructions. The executable reports the requested version and Linux archives preserve executable permissions.
+- Build four ZIP archives for the MVP targets. Each contains its platform's executable, installation instructions, and the Go toolchain's unmodified `LICENSE` and `PATENTS` files under `licenses/go/`. The executable reports the requested version and Linux archives preserve executable permissions.
+- If either Go notice is missing, unreadable, or empty, fail before building archives and preserve existing candidates.
 - Emit one SHA-256 manifest covering the four archives. Rebuilding from the same source and toolchain produces the same archive bytes. A failed build leaves no completed candidate directory and an existing candidate is preserved.
 - Local packaging provides inspectable artifacts. Native test results, licensing, distribution identity, and publication approval remain separate release gates.
 

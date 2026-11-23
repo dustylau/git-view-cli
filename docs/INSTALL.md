@@ -2,6 +2,8 @@
 
 Choose the ZIP for your operating system and architecture. Windows and Linux each have an amd64 archive for x86-64 systems and an arm64 archive for ARM systems. The CLI uses Git 2.43.0 or newer for repository inspection. Running a packaged binary requires Git on PATH.
 
+The `licenses/go/` directory contains the Go toolchain's license and patent grant.
+
 ## Windows
 
 Run these commands from the folder containing the archive and `SHA256SUMS`. Replace the example archive name with the one you received.
