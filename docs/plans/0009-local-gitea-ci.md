@@ -31,6 +31,10 @@ TDD red: `python3 -B -m unittest discover -s tools/ci` in the existing Go test i
 - The bootstrap unit test and the isolated Compose acceptance scenario passed. A push of the staged test commit triggered the Linux/amd64 job, ran the documentation gate, Go vet and static analyzers, race and acceptance tests, Python unit suites, and POSIX Ctrl+C smoke. The job verified the four packages before uploading. Bootstrap downloaded the server artifact, checked all four hashes, and returned the same run URL on a repeat push.
 - Host `npm run check`, gofmt, `go mod verify`, `go vet ./...`, `go test ./... -count=1`, Staticcheck v0.8.2, govulncheck v1.10.0, both existing Docker fixture scenarios, and whitespace checks passed. Compose configuration, shell syntax, PowerShell parsing, and Actionlint v1.7.12 also passed. Actionlint used the custom runner label from Compose.
 
+Follow-up red: the Windows bootstrap seeded the committed feature branch and started a task. Repeating from WSL while that task ran recreated the runner because Compose resolved its config bind with a different host path. The task container disappeared while Gitea still reported the run in progress. Both launchers need explicit reuse of running services.
+
+Follow-up green: with `up --no-recreate` followed by `run --no-deps`, PowerShell and WSL reached the same instance and preserved the runner container ID. A push of the previous source commit to the seeded feature branch was rejected as non-fast-forward.
+
 ## Risks and open decisions
 
 The first setup needs network access to the pinned images, public actions, and build dependencies. Native Windows and ARM64 validation requires the platform runners in the release plan.

@@ -84,7 +84,7 @@ Release requires native test evidence and builds for `windows/amd64`, `windows/a
 ## DEV-002 local CI and delivery
 
 - Docker Compose starts a loopback-only Gitea server with SQLite, a Gitea Actions runner, and a reusable job image. Persist Git repositories, run records, artifacts, and runner registration across stops. Provision local credentials on first start. Windows PowerShell and POSIX shell bootstrap commands need Docker Compose as their host prerequisite.
-- Bootstrap seeds a private Git repository from a committed revision of a read-only checkout. By default it pushes HEAD to its current branch, with `local-ci` as the detached-HEAD fallback. A repeat push of the same commit is safe. Preserve existing remotes and reject non-fast-forward updates.
+- Bootstrap seeds a private Git repository from a committed revision of a read-only checkout. By default it pushes HEAD to its current branch, with `local-ci` as the detached-HEAD fallback. Reuse running services across repeated bootstraps, including when switching shells. Preserve existing remotes and reject non-fast-forward updates.
 - A Git push triggers checkout of the pushed commit, documentation and Go quality checks, race and acceptance tests, and the package build in a container. Successful runs deliver the four MVP ZIPs and `SHA256SUMS` as a downloadable Gitea Actions artifact. The optional bootstrap wait reports the result of that commit and fails on a failed or unavailable run.
 - The default setup needs no GitHub credentials. Existing GitHub-hosted workflows continue to define native platform validation. The local pipeline supplies evidence for its Docker Linux platform.
 

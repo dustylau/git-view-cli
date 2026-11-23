@@ -39,6 +39,6 @@ Set overrides in your shell or Compose `.env`. The source path must be mountable
 
 Use one active CI stack per Docker daemon. Switch between checkouts in the same stack with `LOCAL_CI_SOURCE` and `LOCAL_CI_REPO`.
 
-Use `docker compose ps -a` for service state and `docker compose logs git provision runner` for startup failures. `docker compose stop` stops the stack. Run the bootstrapper again to restart it with the same Git history, credentials, artifacts, and runner registration.
+Use `docker compose ps -a` for service state and `docker compose logs git provision runner` for startup failures. The bootstrapper reuses running services. Use `docker compose stop` to pause the stack or `docker compose down` to apply an infrastructure change such as a new port on the next bootstrap. Both commands retain Git history, credentials, artifacts, and runner registration in the named volumes.
 
 Local CI executes the Linux Docker architecture and cross-builds the other artifact targets. The [hosted workflows](../.github/workflows/go.yml) cover the separate native validation plan.
