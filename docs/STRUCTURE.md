@@ -13,6 +13,7 @@ git-view-cli/
   tests/
     acceptance/
       cli_test.go
+      release_test.go
       terminal_smoke.py
       measure_cli.py
       testdata/slowgit/main.go
@@ -24,11 +25,13 @@ git-view-cli/
     features/
       cli.feature
       container.feature
+      release.feature
       documentation.feature
     steps/documentation.mjs
   docs/
     SPECIFICATION.md
     CLI.md
+    INSTALL.md
     ARCHITECTURE.md
     STACK_COMPARISON.md
     STRUCTURE.md
@@ -40,6 +43,9 @@ git-view-cli/
   .github/workflows/
     documentation.yml
     go.yml
+  tools/release/
+    package_release.py
+    test_package_release.py
   go.mod
   go.sum
   Dockerfile
@@ -56,6 +62,7 @@ git-view-cli/
 | `tests/acceptance/`        | Godog bindings, temporary Git fixtures, terminal smoke test, and performance measurement.       |
 | `tests/features/`          | Executable Gherkin specifications for the CLI and project documentation.                        |
 | `tests/container/`         | Docker build runner, mount lifecycle tests, and scripts for the mounted Git checks.             |
+| `tools/release/`           | Build, package, and checksum the four MVP executables.                                          |
 | `tests/steps/`             | Node-based documentation bindings only.                                                         |
 | `tests/fixtures/`          | Reserved for future captured samples; current repository fixtures use temporary paths.          |
 | `docs/templates/`          | Implementation-plan template for the mandatory workflow.                                        |

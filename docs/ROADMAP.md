@@ -32,3 +32,5 @@ Ship vertical slices rather than implementing all parsing, then all UI, then all
 M0 and the Go decision are complete. M2 tracks native validation through CLI-002. M3 through M6 follow the MVP.
 
 DEV-001 provides a repeatable Linux container build and test workflow with seeded and host fixtures. See [plan 0004](plans/0004-container-test-workflow.md).
+
+REL-001 local packaging produces a versioned candidate for each MVP target and a SHA-256 manifest. See [plan 0006](plans/0006-mvp-candidate-packaging.md) for archive verification and open release gates.

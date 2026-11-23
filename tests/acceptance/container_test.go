@@ -16,19 +16,21 @@ import (
 	"github.com/cucumber/godog"
 )
 
+func hostPython() (string, []string) {
+	if runtime.GOOS == "windows" {
+		if _, err := exec.LookPath("py"); err == nil {
+			return "py", []string{"-3"}
+		}
+		return "python", nil
+	}
+	return "python3", nil
+}
+
 func TestContainerWorkflow(t *testing.T) {
 	if os.Getenv("GIT_VIEW_CONTAINER_TEST") != "1" {
 		t.Skip("set GIT_VIEW_CONTAINER_TEST=1 to run the Docker integration scenarios")
 	}
-	python := "python3"
-	var prefix []string
-	if runtime.GOOS == "windows" {
-		if _, err := exec.LookPath("py"); err == nil {
-			python, prefix = "py", []string{"-3"}
-		} else {
-			python = "python"
-		}
-	}
+	python, prefix := hostPython()
 	test := godog.TestSuite{
 		Name: "container", Options: &godog.Options{
 			Format: "pretty", Paths: []string{"../features/container.feature"}, Strict: true, TestingT: t,

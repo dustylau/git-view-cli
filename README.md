@@ -31,6 +31,16 @@ py -3 tests/container/container_workflow.py --repo "D:\path\to\checkout"
 
 Use `python3` in place of `py -3` on Linux or macOS. See [container test details](docs/TESTING.md#container-build-and-test).
 
+## Package a local MVP candidate
+
+With Go 1.27.4 and Python 3.9 or newer, run the packager from the checkout.
+
+```powershell
+py -3 tools/release/package_release.py --version 0.1.0-rc.1
+```
+
+On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-0.1.0-rc.1/`. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
+
 ## Planned product capabilities
 
 - Monitor a local repository and display branch, upstream, and working state.

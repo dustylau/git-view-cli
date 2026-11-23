@@ -11,7 +11,8 @@ import (
 	gitview "git-view-cli/internal/git"
 )
 
-const Version = "0.1.0-dev"
+// Version is set by the linker for packaged candidates.
+var Version = "0.1.0-dev"
 
 type Reader func(context.Context, string) (gitview.Snapshot, error)
 

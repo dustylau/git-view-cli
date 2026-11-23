@@ -67,6 +67,12 @@ Every run builds or reuses cached layers for `git-view:test`. The build copies G
 
 Run the host-side runner tests with `python3 -B -m unittest discover -s tests/container`. To run the two real Docker acceptance scenarios, set `GIT_VIEW_CONTAINER_TEST=1` and run `go test ./tests/acceptance -run '^TestContainerWorkflow$' -count=1 -v`. The tests check seeded cleanup and compare the host fixture's worktree and Git metadata before and after. This workflow supplies Linux container evidence. Native platform gates are tracked in [plan 0003](plans/0003-mvp-cli-compatibility.md).
 
+## Release candidate packaging
+
+Run the packaging unit tests with `python3 -B -m unittest discover -s tools/release`. To build and inspect all four candidate archives in an acceptance test, set `GIT_VIEW_RELEASE_TEST=1` and run `go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v` on a Windows or Linux host. The scenario checks each PE or ELF architecture, Linux executable permissions, archive contents, checksums, and the version reported by the extracted host binary.
+
+Use the [packaging guide](../README.md#package-a-local-mvp-candidate) to generate files for local review and the [installation guide](INSTALL.md) to verify and run them. Archive and emulated checks complement the native runner results in [plan 0003](plans/0003-mvp-cli-compatibility.md).
+
 ## Dependency review
 
 Production builds use only Go's standard library and installed Git. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.

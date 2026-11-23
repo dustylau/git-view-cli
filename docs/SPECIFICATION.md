@@ -80,3 +80,9 @@ Release requires native test evidence and builds for `windows/amd64`, `windows/a
 - By default, each run creates its own Docker volume. Seed an initial commit and staged, unstaged, and untracked changes. Inspect that volume read-only with the built CLI and verify the expected changes. Remove the volume after the run, including when seeding or tests fail.
 - Accept an existing host checkout as the fixture through an explicit read-only bind mount. Run status and changes on that checkout and surface Git or startup failures. Apply the ownership exception for the mounted path only and keep it inside the test container.
 - Both modes run the Go test suite with the race detector in a network-disabled Linux container. The different container filesystem and Git build provide Linux evidence under NFR-001 and NFR-002. Native Windows and Linux validation follow the MVP release gates.
+
+## REL-001 local candidate packaging
+
+- Build four ZIP archives for the MVP targets. Each contains its platform's executable and installation instructions. The executable reports the requested version and Linux archives preserve executable permissions.
+- Emit one SHA-256 manifest covering the four archives. Rebuilding from the same source and toolchain produces the same archive bytes. A failed build leaves no completed candidate directory and an existing candidate is preserved.
+- Local packaging provides inspectable artifacts. Native test results, licensing, distribution identity, and publication approval remain separate release gates.
