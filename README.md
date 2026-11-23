@@ -16,7 +16,7 @@ go run ./cmd/git-view --repo /path/to/repository changes
 go run ./cmd/git-view --help
 ```
 
-Build with `go build -o bin/git-view ./cmd/git-view` on macOS/Linux, or `go build -o bin/git-view.exe ./cmd/git-view` on Windows. Run the built executable directly to observe its documented exit codes; `go run` wraps nonzero program exits. The binary requires Git on PATH for data commands. Node is not needed to build or run it.
+Build with `go build -o bin/git-view ./cmd/git-view` on Linux, or `go build -o bin/git-view.exe ./cmd/git-view` on Windows. Run the built executable directly to observe its documented exit codes. `go run` wraps nonzero program exits. The binary requires Git on PATH for data commands. Node is used for documentation checks.
 
 Status discovers the worktree from the current or selected directory and reports branch/upstream and separate staged, unstaged, untracked, and conflict counts. Changes shows index/worktree codes and quoted root-relative paths, including renames. Reads are bounded, suppress optional index locks, and do not fetch or stage. See the [CLI contract](docs/CLI.md) for output, limits, escaping, and exit codes.
 
@@ -53,7 +53,7 @@ Bare `git-view` shows status once. The table's Watch and Interactive examples re
 
 **Go is selected by the maintainer.** The [accepted ADR](docs/adr/0001-application-stack.md) supersedes the comparative experiment; the [Rust versus Go comparison](docs/STACK_COMPARISON.md) remains design context. The current CLI uses the Go standard library; Godog is a test dependency. Terminal and watcher libraries are deferred.
 
-Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. The targets are Windows, macOS, and Linux on amd64 and arm64. Local tests cover Windows 11 and Ubuntu 24.04 under WSL2 on amd64. See the compatibility plan for the native runner gates and exact results.
+Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. The MVP targets Windows and Linux on amd64 and arm64. macOS support follows in a later release. Local tests cover Windows 11 and Ubuntu 24.04 under WSL2 on amd64. See the compatibility plan for the native runner gates and exact results.
 
 ## Documentation
 
@@ -81,7 +81,7 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-`gofmt -l cmd internal tests/acceptance` must produce no output. Go tests include unit/process tests and executable Godog scenarios against temporary repositories. Documentation checks cover acceptance, local links, formatting, and linting. Native Windows/macOS/Linux CI is configured; local execution does not establish remote CI or ARM64 runtime coverage. See [testing guidance](docs/TESTING.md).
+`gofmt -l cmd internal tests/acceptance` must produce no output. Go tests include unit and process tests and executable Godog scenarios against temporary repositories. Documentation checks cover acceptance, local links, formatting, and linting. CI configures native Windows and Linux jobs for both MVP architectures. See [testing guidance](docs/TESTING.md) for the available run evidence.
 
 ## Development rule
 

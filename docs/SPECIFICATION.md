@@ -25,7 +25,7 @@ Provide one consistent terminal interface over one local Git working tree per se
 
 ## Quality requirements
 
-- NFR-001: Support Windows, macOS, and Linux. Target amd64 and arm64 binaries. Validate on actual OS runners; cross-compiling is insufficient evidence of runtime compatibility.
+- NFR-001: Target Windows, Linux, and macOS on amd64 and arm64 over the product roadmap. The [MVP scope](#mvp-010) defines the first supported targets. Validate each supported OS and architecture on native runners.
 - NFR-002: Do not implicitly fetch, stage, commit, continue/abort merges, or modify Git configuration. Use optional-lock suppression for background reads.
 - NFR-003: Preserve path identity and support spaces, Unicode, tabs, and newlines where the OS permits. Escape terminal control sequences in displayed repository content.
 - NFR-004: Bound output, paginate history, debounce events, and support cancellation. Git subprocesses must not block terminal input.
@@ -50,7 +50,9 @@ Create README, specification, CLI contract, architecture, directory guide, Rust/
 
 ## MVP 0.1.0
 
-Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR-005 safeguards applicable to plain output. Release requires native Windows/macOS/Linux test evidence, an amd64/arm64 build matrix, documented prerequisites, checksums, license selection, and no unresolved release-blocking defects. CLI-001 begins this MVP; it does not publish a release or claim all-platform support. Files/history, Watch, Interactive, editor/merge handoff, and index mutations remain later increments.
+Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR-005 safeguards applicable to plain output. MVP release targets are Windows and Linux on amd64 and arm64. macOS support follows in a later release.
+
+Release requires native test evidence and builds for `windows/amd64`, `windows/arm64`, `linux/amd64`, and `linux/arm64`, along with documented prerequisites, checksums, license selection, and resolution of release-blocking defects. Files/history, Watch, Interactive, editor/merge handoff, and index mutations remain later increments.
 
 ## CLI-001 acceptance
 
@@ -67,7 +69,7 @@ Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR
 
 - Preserve FR-002, FR-005, and FR-009 across Git configurations. Request detailed ahead/behind counts even if Git's status preference suppresses them. Report a branch literally named `(detached)` as a branch.
 - For NFR-002, prohibit Git transports during reads, including when older Git retries a missing promisor object. If required objects are absent, fail clearly with exit 1 and empty stdout. A local partial-clone fixture must demonstrate that inspection cannot add objects or change Git metadata.
-- Use Git 2.43.0 as the MVP compatibility floor. Record actual Git, OS, and architecture evidence, with native CI smoke tests for the six target pairs. Keep unverified targets visible as release gates under NFR-001.
+- Use Git 2.43.0 as the MVP compatibility floor. Record actual Git, OS, and architecture evidence, with native CI smoke tests for the four MVP targets. Keep unverified targets visible as release gates under NFR-001.
 - Verify NFR-004 with Ctrl+C during a pending Git read in a POSIX pseudo-terminal and an isolated Windows console. Expect exit 130, no status snapshot, and the immediate Git subprocess to be gone.
 - Measure warm one-shot `status` and `changes` from a built binary against a Git-only baseline on small and medium temporary repositories. The p95 budgets are 400 ms and 1 s respectively. Keep the fixture and measurement command reproducible.
 - Keep 0.1.0 output plain. Defer a JSON schema until it can contract path byte encoding and field evolution independently of the human-readable output.
@@ -77,4 +79,4 @@ Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR
 - Build the CLI and prepare the Go test suite in a pinned Linux image. Keep repository data, local Git metadata, and build output out of the build context.
 - By default, each run creates its own Docker volume. Seed an initial commit and staged, unstaged, and untracked changes. Inspect that volume read-only with the built CLI and verify the expected changes. Remove the volume after the run, including when seeding or tests fail.
 - Accept an existing host checkout as the fixture through an explicit read-only bind mount. Run status and changes on that checkout and surface Git or startup failures. Apply the ownership exception for the mounted path only and keep it inside the test container.
-- Both modes run the Go test suite with the race detector in a network-disabled Linux container. The different container filesystem and Git build provide Linux evidence under NFR-001 and NFR-002. Native macOS, Windows, and architecture validation follow the release gates.
+- Both modes run the Go test suite with the race detector in a network-disabled Linux container. The different container filesystem and Git build provide Linux evidence under NFR-001 and NFR-002. Native Windows and Linux validation follow the MVP release gates.

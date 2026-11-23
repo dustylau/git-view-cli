@@ -27,7 +27,7 @@ Start with the standard library for the CLI, Git subprocesses, parsing, and rend
 - Prefer existing widgets, Git patch output, and optional external diff/merge tools.
 - Keep domain/use cases separate from mode-specific presentation.
 - Use explicit tool launches and index mutations, with safe terminal handoff.
-- Test natively on Windows, macOS, and Linux.
+- Test each release on native runners for the OS and architecture pairs in its support policy. The [MVP specification](../SPECIFICATION.md#mvp-010) defines the initial targets.
 
 ## Consequences
 

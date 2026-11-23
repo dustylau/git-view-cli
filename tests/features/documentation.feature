@@ -27,6 +27,15 @@ Feature: A reviewable documentation foundation
       | docs/ROADMAP.md                        | MVP delivery slices      |
     And the stack comparison records the maintainer's Go decision
 
+  Scenario: Discover the 0.1.0 platform scope
+    Given I read the project README
+    Then these documents are available:
+      | file                  | topic                                                 |
+      | docs/SPECIFICATION.md | MVP release targets are Windows and Linux              |
+      | README.md             | MVP targets Windows and Linux on amd64 and arm64        |
+      | docs/TESTING.md       | four MVP runner targets                               |
+      | docs/ROADMAP.md       | macOS support follows after 0.1.0                      |
+
   Scenario: Follow a documented quality workflow
     Given I read the project README
     Then these documents are available:

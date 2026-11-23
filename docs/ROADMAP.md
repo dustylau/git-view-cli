@@ -1,6 +1,6 @@
 # Delivery roadmap
 
-Every milestone follows the [mandatory workflow](../CONTRIBUTING.md). Requirements are defined in the [specification](SPECIFICATION.md). MVP 0.1.0 targets a read-only status/changes CLI; broader terminal modes follow separately. A planned gate is not evidence it has passed.
+Every milestone follows the [mandatory workflow](../CONTRIBUTING.md). Requirements are defined in the [specification](SPECIFICATION.md). MVP 0.1.0 targets a read-only status and changes CLI for Windows and Linux on amd64 and arm64. Broader terminal modes follow in later increments. macOS support follows after 0.1.0.
 
 | Milestone                   | Scope                                                                                       | Acceptance gate                                                                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +27,7 @@ Ship vertical slices rather than implementing all parsing, then all UI, then all
 
 1. **CLI-001:** Go foundation, discovery, status, changes, safe plain output, bounded Git reads, executable BDD/TDD, and initial CI configuration. See [plan 0002](plans/0002-go-mvp-status.md).
 2. **CLI-002 (current):** Git 2.43.0 compatibility floor, local read safeguards, branch identity, terminal cancellation, and performance measurements. Keep the output plain for 0.1.0. Native runner results remain a release gate. See [plan 0003](plans/0003-mvp-cli-compatibility.md).
-3. **REL-001:** choose license and final executable/module/distribution identity; produce amd64/arm64 artifacts and checksums, review dependencies, document install/upgrade, and obtain release approval. Publish 0.1.0 only after native runtime gates pass. This task does not publish.
+3. **REL-001:** choose a license and final distribution identity, produce and checksum the four MVP artifacts, review dependencies, document installation and upgrades, and obtain release approval. Publish 0.1.0 after the native runtime gates pass.
 
 M0 and the Go decision are complete. M2 tracks native validation through CLI-002. M3 through M6 follow the MVP.
 
