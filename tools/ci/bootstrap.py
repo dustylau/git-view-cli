@@ -81,9 +81,13 @@ def candidate_run(runs, sha, branch):
 
 
 def verify_artifact(content, sha):
-    stem = f"git-view-0.1.0-ci.{sha}"
-    archives = [f"{stem}-{target}.zip" for target in ("linux-amd64", "linux-arm64", "windows-amd64", "windows-arm64")]
     with zipfile.ZipFile(io.BytesIO(content)) as delivered:
+        pattern = rf"(git-view-[0-9]+\.[0-9]+\.[0-9]+-ci\.{re.escape(sha)})-linux-amd64\.zip"
+        stems = [m[1] for name in delivered.namelist() if (m := re.fullmatch(pattern, name))]
+        if len(stems) != 1:
+            raise ValueError("Expected one Linux amd64 ZIP for the selected commit.")
+        stem = stems[0]
+        archives = [f"{stem}-{target}.zip" for target in ("linux-amd64", "linux-arm64", "windows-amd64", "windows-arm64")]
         if sorted(delivered.namelist()) != sorted(["SHA256SUMS", *archives]):
             raise ValueError("Delivered artifact does not contain the expected ZIPs and manifest.")
         expected = "".join(f"{hashlib.sha256(delivered.read(name)).hexdigest()}  {name}\n" for name in archives)

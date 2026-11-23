@@ -2,7 +2,7 @@
 
 ## Trust boundaries
 
-This application runs locally with the user's filesystem permissions. CLI-001 only reads status/changes through Git, disables fsmonitor helpers and optional locks, bounds subprocess output/time, and escapes displayed metadata. Repository paths, filenames, commit messages, branch names, file contents, Git configuration, and external tools can be untrusted inputs. No telemetry or remote service is planned. Navigation, external tool, and mutation safeguards below also constrain future slices.
+This application runs locally with the user's filesystem permissions. Git View inspects repositories through Git, suppresses optional locks, bounds reads and escapes repository text. Repository contents, configuration and tools are trust boundaries. Automatic views suppress external diff and textconv. Foreground tools inherit the terminal and can change files or the index. Select a trusted editor or mergetool. An external program that reopens a file by name depends on that path remaining stable during handoff.
 
 ## Required safeguards
 
@@ -17,4 +17,4 @@ This application runs locally with the user's filesystem permissions. CLI-001 on
 
 ## Reporting
 
-No public security contact or reporting channel has been established. Define one before public release. Do not include credentials or private repository content in public reports. There is no release or supported-version security policy yet.
+For v1 reports, contact the repository maintainer through the [GitHub project](https://github.com/dustylau/git-view-cli). Keep credentials and private repository contents out of reports.

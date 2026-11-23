@@ -36,7 +36,7 @@ jobs:
           git diff --check
       - name: Build and verify the candidate
         run: |
-          version="0.1.0-ci.$GITHUB_SHA"
+          version="1.0.0-ci.$GITHUB_SHA"
           python3 tools/release/package_release.py --version "$version"
           GIT_VIEW_RELEASE_TEST=1 GIT_VIEW_RELEASE_VERSION="$version" \
             GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-$version" \
@@ -45,7 +45,7 @@ jobs:
         uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # Gitea-compatible v4
         with:
           name: git-view-candidate
-          path: dist/git-view-0.1.0-ci.${{ github.sha }}/
+          path: dist/git-view-1.0.0-ci.${{ github.sha }}/
           if-no-files-found: error
           compression-level: 0
           retention-days: 14

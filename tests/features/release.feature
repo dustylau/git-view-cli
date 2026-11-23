@@ -1,8 +1,8 @@
-Feature: Verify an MVP release candidate
+Feature: Verify a git-view release candidate
 
   Scenario: Check a versioned candidate for all supported targets
     When I select the release candidate
-    Then the candidate archives include the Go notices and cover exactly:
+    Then the candidate archives include the MIT license and Go notices and cover exactly:
       | os      | arch  |
       | linux   | amd64 |
       | linux   | arm64 |

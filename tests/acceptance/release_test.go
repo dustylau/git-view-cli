@@ -28,7 +28,7 @@ func TestReleasePackaging(t *testing.T) {
 	output := t.TempDir()
 	version := os.Getenv("GIT_VIEW_RELEASE_VERSION")
 	if version == "" {
-		version = "0.1.0-rc.1"
+		version = "1.0.0"
 	}
 	var candidate string
 	var native []byte
@@ -53,7 +53,7 @@ func TestReleasePackaging(t *testing.T) {
 				}
 				return nil
 			})
-			sc.Step(`^the candidate archives include the Go notices and cover exactly:$`, func(table *godog.Table) error {
+			sc.Step(`^the candidate archives include the MIT license and Go notices and cover exactly:$`, func(table *godog.Table) error {
 				notices, err := installedGoNotices()
 				if err != nil {
 					return err
@@ -125,6 +125,9 @@ func TestReleasePackaging(t *testing.T) {
 					lines   []string
 				}{
 					{"status", []string{`Branch: "main"`, "State: dirty", "Changes: staged 1, unstaged 2, untracked 1, conflicts 0"}},
+					{"diff --staged -- tracked.txt", []string{"+staged"}},
+					{"files", []string{`tracked file "tracked.txt"`, `ignored file "ignored.txt"`}},
+					{"conflicts", []string{"No conflicts."}},
 					{"changes", []string{`M M "tracked.txt"`, `. D "deleted.txt"`, `? ? "-new Ω file.txt"`}},
 				} {
 					if err := installed.run(check.command); err != nil {
@@ -168,7 +171,11 @@ func installedGoNotices() (map[string][]byte, error) {
 		return nil, fmt.Errorf("resolve Go toolchain: %w", err)
 	}
 	root := strings.TrimSpace(string(out))
-	notices := make(map[string][]byte)
+	license, err := os.ReadFile("../../LICENSE")
+	if err != nil {
+		return nil, err
+	}
+	notices := map[string][]byte{"LICENSE": license}
 	for _, name := range []string{"LICENSE", "PATENTS"} {
 		data, err := os.ReadFile(filepath.Join(root, name))
 		if err != nil {

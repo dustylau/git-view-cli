@@ -21,7 +21,7 @@ func TestArguments(t *testing.T) {
 		{[]string{"--repo", "space Ω", "changes"}, "changes", "space Ω", 0},
 		{[]string{"changes", "--repo=space Ω"}, "changes", "space Ω", 0},
 		{[]string{"--help"}, "help", "", 0}, {[]string{"-h"}, "help", "", 0}, {[]string{"help"}, "help", "", 0}, {[]string{"--version"}, "version", "", 0},
-		{[]string{"watch"}, "", "", 2}, {[]string{"--json"}, "", "", 2}, {[]string{"--color=always"}, "", "", 2},
+		{[]string{"unknown-command"}, "", "", 2}, {[]string{"--json"}, "", "", 2}, {[]string{"--color=always"}, "", "", 2},
 		{[]string{"--repo"}, "", "", 2}, {[]string{"--repo="}, "", "", 2}, {[]string{"--repo", ""}, "", "", 2},
 		{[]string{"status", "changes"}, "", "", 2}, {[]string{"status", "extra"}, "", "", 2},
 		{[]string{"--repo", "--help"}, "", "", 2}, {[]string{"--help", "--unknown"}, "", "", 2},

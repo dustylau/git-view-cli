@@ -22,7 +22,7 @@ Open the URL printed by the bootstrapper, or visit `http://127.0.0.1:3080` and s
 docker compose run --rm --no-deps --entrypoint cat bootstrap /credentials/password
 ```
 
-Each successful run offers a `git-view-candidate` artifact containing the four MVP ZIPs and `SHA256SUMS`. The filenames and executable version identify the triggering commit. See the [installation guide](INSTALL.md) for extracting and running a ZIP. For subsequent commits, rerun the bootstrapper or push to the HTTP clone URL shown in Gitea.
+Each successful run offers a `git-view-candidate` artifact containing the four platform ZIPs and `SHA256SUMS`. The filenames and executable version identify the triggering commit. See the [installation guide](INSTALL.md) for extracting and running a ZIP. For subsequent commits, rerun the bootstrapper or push to the HTTP clone URL shown in Gitea.
 
 The infrastructure, seeding, compilation, job execution, tests, and packaging run in containers. The host needs Docker Compose and a shell. First use downloads images, public GitHub Actions, and build dependencies. GitHub authentication is unnecessary. The runner uses the Docker daemon and is intended for trusted local workflows. The job containers have their own checked-out workspace.
 

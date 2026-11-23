@@ -48,7 +48,7 @@ def distribution_documents():
         ["go", "env", "GOROOT"], cwd=ROOT, env=go_environment(), text=True, encoding="utf-8",
     ).strip())
     instructions = (ROOT / "docs/INSTALL.md").read_text(encoding="utf-8").encode("utf-8")
-    documents = {"INSTALL.md": instructions}
+    documents = {"INSTALL.md": instructions, "LICENSE": (ROOT / "LICENSE").read_bytes()}
     for name in ("LICENSE", "PATENTS"):
         notice = go_root / name
         contents = notice.read_bytes()
@@ -71,7 +71,7 @@ def write_zip(archive, binary, documents):
 
 def package_release(version, output, build=build_target):
     if VERSION.fullmatch(version) is None:
-        raise ValueError("use a version like 0.1.0-rc.1")
+        raise ValueError("use a version like 1.0.0")
     stem = f"git-view-{version}"
     candidate = output.resolve() / stem
     if candidate.exists() or candidate.is_symlink():
@@ -99,7 +99,7 @@ def package_release(version, output, build=build_target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", required=True, help="candidate version, for example 0.1.0-rc.1")
+    parser.add_argument("--version", required=True, help="candidate version, for example 1.0.0")
     parser.add_argument("--out", type=Path, default=ROOT / "dist", help="parent output directory")
     args = parser.parse_args()
     try:

@@ -8,8 +8,8 @@ Go is selected in [ADR 0001](adr/0001-application-stack.md). CLI-001 replaces th
 git-view-cli/
   cmd/git-view/main.go
   internal/
-    cli/                 # arguments, plain rendering, exit codes; unit tests
-    git/                 # snapshot model, porcelain parser, Git boundary; tests
+    cli/                 # arguments, views, sessions, foreground tools and confirmation
+    git/                 # status, history, files, patches and index operations
   tests/
     acceptance/
       cli_test.go
@@ -24,6 +24,7 @@ git-view-cli/
       test_workflow.py
     features/
       cli.feature
+      v1.feature
       container.feature
       release.feature
       documentation.feature
@@ -65,12 +66,10 @@ git-view-cli/
 | `tests/acceptance/`        | Godog bindings, temporary Git fixtures, terminal smoke test, and performance measurement.       |
 | `tests/features/`          | Executable Gherkin specifications for the CLI and project documentation.                        |
 | `tests/container/`         | Docker build runner, mount lifecycle tests, and scripts for the mounted Git checks.             |
-| `tools/release/`           | Build, package, and checksum the four MVP executables.                                          |
+| `tools/release/`           | Build, package, and checksum the four release executables.                                      |
 | `tests/steps/`             | Node-based documentation bindings only.                                                         |
 | `tests/fixtures/`          | Reserved for future captured samples; current repository fixtures use temporary paths.          |
 | `docs/templates/`          | Implementation-plan template for the mandatory workflow.                                        |
 | `.github/workflows/go.yml` | Configured native Go test/static checks; not proof that CI has run.                             |
 
-No monitor, terminal widget, or tool-launch packages exist yet. Add `internal/core`, `monitor`, `terminal`, or `tools` only when an implementing slice needs them. Keep tests beside Go packages and avoid speculative empty package hierarchies.
-
-`go.mod` uses the provisional local module name `git-view-cli` because no hosting identity is configured; finalize it before release installation instructions use a remote module path. `go.sum` locks the test dependency graph. Production builds use only standard-library packages. `package.json` and its lockfile are documentation development tooling. Generated `bin/`, `dist/`, coverage, and report files are ignored.
+Session and foreground code lives in `internal/cli`. `internal/git` owns bounded queries and index updates. `go.mod` pins the Go toolchain, terminal checks and Godog test tooling. `go.sum` records module checksums. `package.json` and its lockfile are documentation development tooling. Generated `bin/`, `dist/`, coverage, and report files are ignored.

@@ -38,17 +38,7 @@ func (p Process) Run(ctx context.Context, dir string, args ...string) ([]byte, e
 		return nil, fmt.Errorf("%w: %v", ErrMissingGit, cmd.Err)
 	}
 	cmd.Dir = dir
-	// Explicit directory selection takes precedence over inherited Git routing.
-	for _, item := range os.Environ() {
-		key, _, _ := strings.Cut(item, "=")
-		switch strings.ToUpper(key) {
-		case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_NO_LAZY_FETCH", "GIT_TERMINAL_PROMPT", "GIT_ALLOW_PROTOCOL":
-			continue
-		}
-		cmd.Env = append(cmd.Env, item)
-	}
-	// The empty transport allowlist also covers Git versions without lazy-fetch suppression.
-	cmd.Env = append(cmd.Env, "GIT_NO_LAZY_FETCH=1", "GIT_TERMINAL_PROMPT=0", "GIT_ALLOW_PROTOCOL=")
+	cmd.Env = LocalEnv()
 	stdout := &boundedBuffer{limit: p.Limit, cancel: cancel}
 	stderr := &boundedBuffer{limit: p.Limit, cancel: cancel}
 	cmd.Stdout, cmd.Stderr = stdout, stderr
@@ -89,13 +79,16 @@ type Runner interface {
 	Run(context.Context, string, ...string) ([]byte, error)
 }
 
+func safeArgs(args ...string) []string {
+	return append([]string{"--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"}, args...)
+}
+
 func Read(ctx context.Context, runner Runner, directory string) (Snapshot, error) {
 	if directory == "" {
 		directory = "."
 	}
 	read := func(dir string, args ...string) ([]byte, error) {
-		prefix := []string{"--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"}
-		return runner.Run(ctx, dir, append(prefix, args...)...)
+		return runner.Run(ctx, dir, safeArgs(args...)...)
 	}
 	inside, err := read(directory, "rev-parse", "--is-inside-work-tree")
 	if err != nil {
@@ -149,4 +142,22 @@ func Read(ctx context.Context, runner Runner, directory string) (Snapshot, error
 	}
 	snapshot.Repository = identity
 	return snapshot, nil
+}
+
+// LocalEnv selects the requested worktree and disables transports.
+func LocalEnv() []string {
+	var env []string
+
+	// Explicit directory selection takes precedence over inherited Git routing.
+	for _, item := range os.Environ() {
+		key, _, _ := strings.Cut(item, "=")
+		switch strings.ToUpper(key) {
+		case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_LITERAL_PATHSPECS", "GIT_GLOB_PATHSPECS", "GIT_NOGLOB_PATHSPECS", "GIT_ICASE_PATHSPECS", "GIT_NO_LAZY_FETCH", "GIT_TERMINAL_PROMPT", "GIT_ALLOW_PROTOCOL":
+			continue
+		}
+		env = append(env, item)
+	}
+	// The empty transport allowlist also covers Git versions without lazy-fetch suppression.
+	env = append(env, "GIT_NO_LAZY_FETCH=1", "GIT_TERMINAL_PROMPT=0", "GIT_ALLOW_PROTOCOL=")
+	return env
 }

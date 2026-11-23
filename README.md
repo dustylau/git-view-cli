@@ -1,24 +1,30 @@
 # git-view-cli
 
-A portable terminal companion for inspecting and managing a local Git repository.
+Git View 1.0.0 brings repository status, file browsing, commit history, patches and conflict resolution into one terminal. The CLI works with installed Git 2.43.0 or newer. Download the ZIP for Windows or Linux on amd64 or arm64 from [GitHub Releases](https://github.com/dustylau/git-view-cli/releases) and follow the [installation guide](docs/INSTALL.md).
 
-**Implemented: read-only `status` and `changes` CLI in Go (0.1.0-dev). No release is published.**
-The executable name `git-view` is provisional. Watch and Interactive are planned.
+## Use Git View
 
-## Run the first slice
-
-Use Go 1.27.4 and Git 2.43.0 or newer. Run these commands from the checkout.
+Run these commands inside a worktree, or select one with `--repo <directory>`.
 
 ```sh
-go run ./cmd/git-view
-go run ./cmd/git-view status
-go run ./cmd/git-view --repo /path/to/repository changes
-go run ./cmd/git-view --help
+git-view status
+git-view changes
+git-view files -- src
+git-view log --limit 10
+git-view history -- README.md
+git-view show HEAD
+git-view diff --staged -- README.md
+git-view watch --views status,changes
+git-view interactive
 ```
 
-Build with `go build -o bin/git-view ./cmd/git-view` on Linux, or `go build -o bin/git-view.exe ./cmd/git-view` on Windows. Run the built executable directly to observe its documented exit codes. `go run` wraps nonzero program exits. The binary requires Git on PATH for data commands. Node is used for documentation checks.
+Bare `git-view` prints status. Watch refreshes selected views every two seconds. In Interactive, type a command and press Return. For example, enter `files`, then `edit -- "name with spaces.txt"`. Enter `watch` for live updates, `back` to return to the active view, or `quit` to leave.
 
-Status discovers the worktree from the current or selected directory and reports branch/upstream and separate staged, unstaged, untracked, and conflict counts. Changes shows index/worktree codes and quoted root-relative paths, including renames. Reads are bounded, suppress optional index locks, and do not fetch or stage. See the [CLI contract](docs/CLI.md) for output, limits, escaping, and exit codes.
+Use `conflicts` to see the available Git stages. Open an unmerged file with `resolve --editor -- FILE` or launch your configured Git mergetool with `resolve --tool -- FILE`. Git View reports the resulting index state. Stage or unstage individual files with confirmation. Use `stage --remove -- FILE` for an intentional deletion and `--yes` for scripted confirmation. The [CLI guide](docs/CLI.md) covers editor settings, quoted paths and exit codes.
+
+## Build from source
+
+Use Go 1.27.4. Build with `go build -o bin/git-view ./cmd/git-view` on Linux or `go build -o bin/git-view.exe ./cmd/git-view` on Windows. Running `go run ./cmd/git-view --help` prints the command list. Node is used for documentation checks.
 
 ## Build and test with Docker
 
@@ -41,50 +47,30 @@ With Docker running Linux containers, seed the current committed branch into Git
 
 On Linux or WSL, run `sh tools/ci/bootstrap.sh --wait`. The local server starts at `http://127.0.0.1:3080`. See [local CI setup and downloads](docs/LOCAL_CI.md).
 
-## Package a local MVP candidate
+## Package a local candidate
 
 With Go 1.27.4 and Python 3.9 or newer, run the packager from the checkout.
 
 ```powershell
-py -3 tools/release/package_release.py --version 0.1.0-rc.3
+py -3 tools/release/package_release.py --version 1.0.0
 ```
 
-On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-0.1.0-rc.3/`. Each archive includes the Go toolchain notices. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
+On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-1.0.0/`. Each archive includes installation instructions, the MIT license and the Go notices. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
 
-The [candidate verification guide](docs/TESTING.md#release-candidate-packaging) describes checking an existing set locally or running the release-candidate workflow on the four MVP runners.
+The [candidate verification guide](docs/TESTING.md#release-candidate-packaging) describes checking an existing set locally or running the release-candidate workflow on the four native runners.
 
-## Planned product capabilities
+## Implementation
 
-- Monitor a local repository and display branch, upstream, and working state.
-- Browse repository files and folders and open selected files in an editor.
-- List new, updated, deleted, renamed, staged, and conflicted files.
-- Browse commits, inspect file history, and view diffs.
-- Assist merge conflict resolution through existing Git tools and explicit staging.
-
-## Three modes
-
-| Mode          | Behavior                                                   | Planned example                         |
-| ------------- | ---------------------------------------------------------- | --------------------------------------- |
-| CLI (default) | Perform one action, display the result, and exit.          | `git-view status`                       |
-| Watch         | Continuously refresh views selected through arguments.     | `git-view watch --views status,changes` |
-| Interactive   | Maintain a session with access to all functions and views. | `git-view interactive`                  |
-
-Bare `git-view` shows status once. The table's Watch and Interactive examples remain future commands. Planned interactive sessions will switch views, pause updates, enter a Watch presentation, and execute one-shot actions while preserving repository context.
-
-## Stack decision
-
-**Go is selected by the maintainer.** The [accepted ADR](docs/adr/0001-application-stack.md) supersedes the comparative experiment; the [Rust versus Go comparison](docs/STACK_COMPARISON.md) remains design context. The current CLI uses the Go standard library; Godog is a test dependency. Terminal and watcher libraries are deferred.
-
-Git supplies repository semantics. Existing diff, pager, editor, and merge tools take priority in later slices. The MVP targets Windows and Linux on amd64 and arm64. macOS support follows in a later release. Local tests cover Windows 11 and Ubuntu 24.04 under WSL2 on amd64. See the compatibility plan for the native runner gates and exact results.
+Git supplies repository status, revision traversal, patches, index transactions and merge tools. The Go executable uses normal terminal line input. See the [architecture](docs/ARCHITECTURE.md) and the [v1 roadmap](docs/ROADMAP.md) for design decisions and later features.
 
 ## Documentation
 
 - [Specification](docs/SPECIFICATION.md): numbered requirements and acceptance criteria.
-- [CLI contract](docs/CLI.md): planned commands, modes, output, and errors.
+- [CLI contract](docs/CLI.md): commands, modes, output, and errors.
 - [Architecture](docs/ARCHITECTURE.md): components and Git/tool boundaries.
 - [Repository structure](docs/STRUCTURE.md): Go packages and test directories.
 - [Roadmap](docs/ROADMAP.md): incremental delivery gates.
-- [Current plan](docs/plans/0003-mvp-cli-compatibility.md): compatibility scope, checklist, and validation evidence.
+- [Current plan](docs/plans/0011-v1-release.md): v1 scope, checklist, and validation evidence.
 - [Contributing](CONTRIBUTING.md): mandatory development workflow.
 - [Testing](docs/TESTING.md): BDD/TDD, checks, and platform verification.
 - [Security](SECURITY.md): local repository and process trust boundaries.
@@ -103,7 +89,7 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-`gofmt -l cmd internal tests/acceptance` must produce no output. Go tests include unit and process tests and executable Godog scenarios against temporary repositories. Documentation checks cover acceptance, local links, formatting, and linting. CI configures native Windows and Linux jobs for both MVP architectures. See [testing guidance](docs/TESTING.md) for the available run evidence.
+`gofmt -l cmd internal tests/acceptance` must produce no output. Go tests include unit and process tests and executable Godog scenarios against temporary repositories. Documentation checks cover acceptance, local links, formatting, and linting. CI configures native Windows and Linux jobs for both architectures. See [testing guidance](docs/TESTING.md) for the available run evidence.
 
 ## Development rule
 
@@ -111,4 +97,4 @@ Every change starts on a clean, named branch with an updated specification and c
 
 ## License
 
-No license has been selected. Choose one before public distribution.
+Git View is distributed under the [MIT License](LICENSE).

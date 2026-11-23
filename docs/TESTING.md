@@ -15,7 +15,7 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
 git diff --check
 ```
 
-`gofmt -l` must produce no output; use `gofmt -w` to fix formatting. It does not itself return failure for listed files, so CI enforces the empty result explicitly. `npm run check` combines Prettier, Markdown lint, step-binding JavaScript syntax, and four documentation BDD scenarios. `npm run format` formats documentation/tooling files. Go uses gofmt independently.
+`gofmt -l` must produce no output; use `gofmt -w` to fix formatting. It does not itself return failure for listed files, so CI enforces the empty result explicitly. `npm run check` combines Prettier, Markdown lint, step-binding JavaScript syntax, and five documentation BDD scenarios. `npm run format` formats documentation/tooling files. Go uses gofmt independently.
 
 `go test ./...` includes parser, process-boundary, and CLI unit tests plus Godog acceptance. To focus on executable BDD, run `go test ./tests/acceptance -run TestCLI -count=1 -v`. It builds a fresh binary, binds real Gherkin, and invokes the binary directly to assert exit codes and stream separation. Undefined/pending steps fail under strict mode. Fixtures isolate Git system/global configuration and identity, use synthetic data and local refs, and require no network. Read-only scenarios hash fixture files, including Git metadata, before and after invocation. This verifies content preservation, not the absence of every filesystem event.
 
@@ -35,15 +35,15 @@ A `.feature` file without executable bindings is not coverage. Skipped scenarios
 | CLI acceptance       | Real clean/dirty, unborn/detached, staged/unstaged, deleted/renamed/untracked/ignored, conflict, upstream, submodule, worktree, help/version/error fixtures.           |
 | Platform paths       | Spaces, Unicode, leading dashes on Windows; parser/render tests cover tabs/newlines/control/non-UTF-8 bytes. `TestPOSIXPaths` requires native POSIX and skips Windows. |
 | Race detector        | Run `go test -race ./...` where cgo/a C compiler are available. CI configures this on Linux. Report a missing local compiler explicitly.                               |
-| Watch                | Future: external changes, atomic saves, metadata events, overflow, polling, stale results, Ctrl+C, process-tree cleanup.                                               |
-| Interactive/terminal | Future: navigation, resize, native key events, editor handoff, cancellation, mode transitions, terminal restoration.                                                   |
-| Conflict assistance  | Current listing/counts only; future tool launches and index actions require preservation, stage-state, explicit-resolution tests.                                      |
+| Watch                | External changes, periodic reconciliation, last successful view, pause/resume and cancellation.                                                                        |
+| Interactive/terminal | Navigation, retained file selection, native line input, editor handoff and terminal restoration.                                                                       |
+| Conflict assistance  | Available stages in add/add, modify/delete and content conflicts, mergetool, explicit staging and post-tool state.                                                     |
 
 Use bounded eventual assertions for real OS events rather than sleeps. Keep pure unit tests deterministic through injected boundaries. Each later slice must add tests for its behavior; CLI tests cannot prove terminal ownership or watcher behavior.
 
 ## CI and platform claims
 
-The [Go workflow](../.github/workflows/go.yml) checks the Git floor and native Go toolchain on four MVP runner targets: Windows and Linux, each on amd64 and arm64. It configures the Go suite and terminal smoke test on each target, plus the race detector and advisory scan on Linux. See [GitHub's runner labels](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Local results cover Windows/amd64 and Linux/amd64 under WSL2. The Linux race suite passed under WSL2 with cgo and GCC. Hosted jobs and native arm64 results are pending. macOS support is scheduled for a later release.
+The [Go workflow](../.github/workflows/go.yml) checks the Git floor and native Go toolchain on four MVP runner targets: Windows and Linux, each on amd64 and arm64. It configures the Go suite and terminal smoke test on each target, plus the race detector and advisory scan on Linux. See [GitHub's runner labels](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Local results cover Windows/amd64 and Linux/amd64 under WSL2. The Linux race suite passed under WSL2 with cgo and GCC. Use the workflow runs for the release revision as its platform evidence. macOS support is scheduled for a later release.
 
 Run the terminal check on Windows with `py -3 tests/acceptance/terminal_smoke.py` and on Linux with `python3 tests/acceptance/terminal_smoke.py`. The script builds the CLI and a controlled Git child in a temporary directory. It sends Ctrl+C after the child signals readiness, checks exit 130 and the cancellation diagnostic, and verifies that the child has exited. Windows uses an isolated console with captured streams. Linux uses a pseudo-terminal.
 
@@ -69,22 +69,22 @@ Run the host-side runner tests with `python3 -B -m unittest discover -s tests/co
 
 ## Release candidate packaging
 
-Run the packaging unit tests with `python3 -B -m unittest discover -s tools/release`. To build and inspect all four candidate archives in an acceptance test, set `GIT_VIEW_RELEASE_TEST=1` and run `go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v` on a Windows or Linux host. The scenario checks each PE or ELF architecture, Linux executable permissions, archive contents, and checksums. It compares the bundled Go notices byte for byte with the pinned toolchain files. It runs the extracted host executable with `--version`, `status`, and `changes` and compares the worktree and Git metadata before and after each repository read.
+Run the packaging unit tests with `python3 -B -m unittest discover -s tools/release`. To build and inspect all four candidate archives in an acceptance test, set `GIT_VIEW_RELEASE_TEST=1` and run `go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v` on a Windows or Linux host. The v1 scenario also checks the MIT license and exercises files, staged diff and conflicts from the extracted binary. The scenario checks each PE or ELF architecture, Linux executable permissions, archive contents, and checksums. It compares the bundled Go notices byte for byte with the pinned toolchain files. It runs the extracted host executable with `--version`, `status`, and `changes` and compares the worktree and Git metadata before and after each repository read.
 
 To check a prebuilt candidate from the project root, set `GIT_VIEW_RELEASE_DIR` to the absolute path of the directory containing the four ZIPs and `SHA256SUMS`. Set `GIT_VIEW_RELEASE_VERSION` to the expected version. For example, in PowerShell:
 
 ```powershell
 $env:GIT_VIEW_RELEASE_TEST = '1'
-$env:GIT_VIEW_RELEASE_VERSION = '0.1.0-rc.3'
-$env:GIT_VIEW_RELEASE_DIR = (Resolve-Path 'dist/git-view-0.1.0-rc.3').Path
+$env:GIT_VIEW_RELEASE_VERSION = '1.0.0'
+$env:GIT_VIEW_RELEASE_DIR = (Resolve-Path 'dist/git-view-1.0.0').Path
 go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v
 ```
 
-On Linux, export the same variables with `GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-0.1.0-rc.3"`. With `GIT_VIEW_RELEASE_DIR` unset, the test builds into a temporary directory. `GIT_VIEW_RELEASE_VERSION` defaults to `0.1.0-rc.1`.
+On Linux, export the same variables with `GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-1.0.0"`. With `GIT_VIEW_RELEASE_DIR` unset, the test builds into a temporary directory. `GIT_VIEW_RELEASE_VERSION` defaults to `1.0.0`.
 
 After the [Release candidate workflow](../.github/workflows/release-candidate.yml) is available in the GitHub repository's default branch, dispatch it from the Actions tab with a branch and version. The build job uploads one artifact. All four verification jobs download it by ID and validate the same archive bytes. Use the workflow run and its revision to record candidate evidence. See [GitHub's manual dispatch requirements](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
 
-Use the [packaging guide](../README.md#package-a-local-mvp-candidate) to generate files for local review and the [installation guide](INSTALL.md) to verify and run them. The candidate check complements the source-level compatibility checks in [plan 0003](plans/0003-mvp-cli-compatibility.md). See [plan 0007](plans/0007-native-candidate-verification.md) for actual candidate verification results.
+Use the [packaging guide](../README.md#package-a-local-candidate) to generate files for local review and the [installation guide](INSTALL.md) to verify and run them. The candidate check complements the source-level compatibility checks in [plan 0003](plans/0003-mvp-cli-compatibility.md). See [plan 0007](plans/0007-native-candidate-verification.md) for actual candidate verification results.
 
 ## Local pipeline acceptance
 
@@ -92,6 +92,10 @@ Use the [local CI guide](LOCAL_CI.md) to run the pipeline from an ordinary check
 
 ## Dependency review
 
-Production builds use only Go's standard library and installed Git. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.
+Production builds use installed Git and the Go terminal and system packages, `golang.org/x/term` v0.48.0 and `golang.org/x/sys` v0.50.0. Both have BSD-style LICENSE files identical to the bundled Go license. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.
 
 Use `npm audit` when changing documentation tooling. The foundation's scoped override pins Markdown lint's transitive KaTeX to `0.18.2` for the [KaTeX advisory](https://github.com/advisories/GHSA-238p-pmpm-9mq7). This crosses the math extension's original range; its initial renderer smoke test and lint suite passed. Revisit when upstream includes the fix. Node packages do not ship in the CLI.
+
+## v1 terminal and repository coverage
+
+Run `go test ./... -count=1` for the v1 Gherkin scenarios, literal staging and unborn unstage, merge-tool/editor return, paginated rename history, binary/large diffs, conflict stages and live-session recovery. Run `python3 tests/acceptance/terminal_smoke.py` (or `py -3` on Windows) for a real terminal session. It drives navigation, an external worktree change, Watch pause/resume/back, editor input handoff, confirmation and exit using an isolated Windows console or a POSIX pseudo-terminal. The separate Ctrl+C case checks immediate Git child cleanup. See [plan 0011](plans/0011-v1-release.md).

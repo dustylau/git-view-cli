@@ -304,8 +304,12 @@ func (f *fixture) run(mode string) error {
 		"help":             {"--help"}, "version": {"--version"}, "invalid": {"--unknown"},
 	}[mode]
 	if !ok {
-		return fmt.Errorf("unknown invocation %q", mode)
+		args = strings.Fields(mode)
 	}
+	return f.runArgs(args...)
+}
+
+func (f *fixture) runArgs(args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	f.out.Reset()
@@ -388,7 +392,7 @@ func TestCLI(t *testing.T) {
 	binary := buildCLI(t)
 	var f *fixture
 	suite := godog.TestSuite{
-		Name: "cli", Options: &godog.Options{Format: "progress", Paths: []string{"../features/cli.feature"}, Strict: true, TestingT: t},
+		Name: "cli", Options: &godog.Options{Format: "progress", Paths: []string{"../features/cli.feature", "../features/v1.feature"}, Strict: true, TestingT: t},
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
 			sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
 				f = &fixture{binary: binary}

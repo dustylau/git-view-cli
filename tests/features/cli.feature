@@ -147,7 +147,7 @@ Feature: Read-only local Git inspection
     Given a Git fixture "no git"
     When I run git-view with "version"
     Then the exit code is 0
-    And stdout contains "git-view 0.1.0-dev"
+    And stdout contains "git-view 1.0.0"
     And stderr is empty
 
   Scenario: Missing Git is actionable

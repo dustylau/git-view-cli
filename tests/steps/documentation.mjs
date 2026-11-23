@@ -18,13 +18,16 @@ Then(
   },
 );
 
-Then(
-  "the README distinguishes the implemented CLI from planned modes",
-  function () {
-    assert.match(this.readme, /Implemented:.*status.*changes/);
-    assert.match(this.readme, /Watch and Interactive.*planned/);
-  },
-);
+Then("the README explains how to run all three modes", function () {
+  for (const command of [
+    "git-view status",
+    "git-view watch --views",
+    "git-view interactive",
+  ]) {
+    assert.ok(this.readme.includes(command), command);
+  }
+  assert.ok(this.readme.includes("1.0.0"));
+});
 
 Then("these documents are available:", async function (table) {
   for (const { file, topic } of table.hashes()) {

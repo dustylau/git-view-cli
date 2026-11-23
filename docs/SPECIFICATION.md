@@ -1,7 +1,7 @@
 # Product specification
 
 Status: product contract; implementation proceeds in the slices below.
-Current increment: CLI-002, compatibility and release validation for the read-only CLI.
+Current increment: V1-001, the public 1.0.0 release.
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Provide one consistent terminal interface over one local Git working tree per se
 
 ## Quality requirements
 
-- NFR-001: Target Windows, Linux, and macOS on amd64 and arm64 over the product roadmap. The [MVP scope](#mvp-010) defines the first supported targets. Validate each supported OS and architecture on native runners.
+- NFR-001: Target Windows, Linux, and macOS on amd64 and arm64 over the product roadmap. The [v1 scope](#v1-001-public-100-release) defines the release targets. Validate each supported OS and architecture on native runners.
 - NFR-002: Do not implicitly fetch, stage, commit, continue/abort merges, or modify Git configuration. Use optional-lock suppression for background reads.
 - NFR-003: Preserve path identity and support spaces, Unicode, tabs, and newlines where the OS permits. Escape terminal control sequences in displayed repository content.
 - NFR-004: Bound output, paginate history, debounce events, and support cancellation. Git subprocesses must not block terminal input.
@@ -100,3 +100,14 @@ Release requires native test evidence and builds for `windows/amd64`, `windows/a
 - A manually dispatched release-candidate workflow builds and uploads one four-archive candidate with its checksum manifest. Each of the four MVP native runners downloads that same workflow artifact. The workflow creates no release or tag.
 - Check the complete candidate manifest, archive names and contents, and executable architectures on each runner. Run the extracted executable for that runner with `--version`, `status`, and `changes`. Verify the requested version and expected results on a temporary mixed-change worktree and confirm the worktree and Git metadata contents are preserved.
 - The same checks accept an existing candidate directory on a local Windows or Linux machine. Missing, mismatched, or damaged artifacts fail verification without rebuilding the candidate.
+
+## V1-001 public 1.0.0 release
+
+Deliver FR-001 through FR-011 on Windows and Linux, amd64 and arm64. Preserve the MVP plain status and changes interface. Package the executable as git-view with the MIT project license and applicable Go notices. Publish the four native-verified archives and their SHA-256 manifest against the tested revision.
+
+- Browse a directory at a time from the worktree root. Identify directories, tracked, ignored and untracked files, symlinks and submodules. Refuse traversal into Git metadata, linked directories or nested repositories.
+- Page log and file history (20 by default, up to 100, with skip), including empty history for unborn branches. Delegate rename following, commit lookup and binary/patch generation to Git. Display escaped patch text within a fixed output budget, with an explicit large-patch message.
+- Display each unmerged path with its available base, ours and theirs stages. Open an existing regular file in a foreground editor or invoke Git mergetool on one unmerged path. Re-read status after the tool exits. Mutations preview exact file targets, require confirmation or explicit scripted consent, support unborn unstage and require an explicit deletion resolution.
+- Refresh selected Watch views by reconciling every two seconds. Coalesce refreshes, preserve the last complete result on errors and support cancellation during reads. In Interactive, accept the same commands and quoted paths, retain the current view, and support Watch, pause, resume, back and quit.
+- Require a terminal for live modes and foreground tools. Use normal terminal line input and leave terminal settings intact across errors and child exits. An explicit executable and argument array configures editor wait semantics.
+- Defer native filesystem event acceleration, full-screen keyboard widgets, JSON/color, custom pager/difftool integration and macOS distribution. Reconciliation, plain patches and terminal navigation cover the corresponding core workflows in 1.0.

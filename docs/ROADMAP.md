@@ -1,38 +1,19 @@
 # Delivery roadmap
 
-Every milestone follows the [mandatory workflow](../CONTRIBUTING.md). Requirements are defined in the [specification](SPECIFICATION.md). MVP 0.1.0 targets a read-only status and changes CLI for Windows and Linux on amd64 and arm64. Broader terminal modes follow in later increments. macOS support follows after 0.1.0.
+The [specification](SPECIFICATION.md) defines the requirements. Every milestone uses the [contribution workflow](../CONTRIBUTING.md).
 
-| Milestone                   | Scope                                                                                       | Acceptance gate                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| M0: Foundation              | DOC-001: docs, directory structure, language comparison, reproducible documentation checks. | Documentation BDD first red then green; docs lint/format/link checks pass; committed clean branch.                        |
-| M1: Stack decision          | Go selected by maintainer; ADR accepted, comparative experiment superseded.                 | Pin toolchain/dependencies in CLI-001; retain native/platform and terminal gates for relevant increments.                 |
-| M2: Read-only CLI           | FR-002, FR-005, FR-009: repository discovery, status, changes, help/errors.                 | Real temporary-repo BDD covers clean/dirty, staged/unstaged, unborn/detached HEAD, worktrees, and unusual paths.          |
-| M3: Files and history       | FR-003, FR-006, FR-007: files, commits, history, Git diffs.                                 | Paginated queries and binary/large-file fallbacks pass tests; no implicit repository mutations.                           |
-| M4: Watch                   | FR-001, FR-010: selectable live views, metadata invalidation, reconciliation.               | External Git/editor changes refresh correctly; overflow/fallback/cancellation tests pass.                                 |
-| M5: Interactive and editors | FR-004, FR-011: navigation, actions, mode transitions, editor handoff.                      | Terminal restored after child tools/errors; all existing functions accessible; state survives transitions.                |
-| M6: Conflict assistance     | FR-008: conflict stages, explicit mergetool/editor launch, stage/unstage.                   | Content/add/delete conflict fixtures pass; report index state and preserve unrelated edits; no implicit continuation.     |
-| M7: Release hardening       | NFR-001 through NFR-006; distribution, compatibility matrix, licensing.                     | Native test evidence, supported architecture artifacts, checksums, dependency review, release docs, and license decision. |
+## 1.0.0 delivery sequence
 
-Ship vertical slices rather than implementing all parsing, then all UI, then all tests. Within each milestone, update the contract and write one failing executable behavior before implementing that behavior. Do not check off future requirements merely because they have documentation.
+| Milestone | Included in v1                                                           | Acceptance gate                                                                      |
+| --------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| M3        | Files, paginated log/history, commit details, staged and working patches | Real listings, binary and size boundaries, literal paths, empty histories            |
+| M4        | Live status, changes, files, commits and conflicts                       | Reconciliation observes external updates, handles stale results and cancels promptly |
+| M5        | Interactive command navigation, editor handoff and return to view        | Terminal-required checks, quoted selection, pause/resume and mode transitions        |
+| M6        | Conflict stages, mergetool and confirmed stage/unstage                   | Index re-query, explicit deletions and unrelated worktree edits preserved            |
+| M7        | Public MIT release on four Windows/Linux targets                         | Quality gates, native execution, versioned ZIPs and SHA-256 manifest                 |
 
-## Outstanding decisions
-
-- Go chosen in [ADR 0001](adr/0001-application-stack.md); terminal/watch dependencies remain deferred.
-- Exact supported OS/terminal/Git versions and the compiler support policy beyond pinned Go 1.27.4.
-- Configuration schema, editor-command compatibility, and JSON schema/versioning.
-- Poll/reconciliation defaults and measured responsiveness/resource budgets.
-- License, executable naming/distribution availability, and release signing approach.
+[Plan 0011](plans/0011-v1-release.md) tracks the build and validation for the release. After v1, prioritize macOS native runners, event-assisted refresh, a full-screen selector and enhanced diff presentation. JSON needs its own versioned schema.
 
 ## MVP delivery slices
 
-1. **CLI-001:** Go foundation, discovery, status, changes, safe plain output, bounded Git reads, executable BDD/TDD, and initial CI configuration. See [plan 0002](plans/0002-go-mvp-status.md).
-2. **CLI-002 (current):** Git 2.43.0 compatibility floor, local read safeguards, branch identity, terminal cancellation, and performance measurements. Keep the output plain for 0.1.0. Native runner results remain a release gate. See [plan 0003](plans/0003-mvp-cli-compatibility.md).
-3. **REL-001:** choose a license and final distribution identity, produce and checksum the four MVP artifacts, review dependencies, document installation and upgrades, and obtain release approval. Publish 0.1.0 after the native runtime gates pass.
-
-M0 and the Go decision are complete. M2 tracks native validation through CLI-002. M3 through M6 follow the MVP.
-
-DEV-001 provides a repeatable Linux container build and test workflow with seeded and host fixtures. See [plan 0004](plans/0004-container-test-workflow.md).
-
-DEV-002 runs CI and candidate delivery in a local Gitea Compose stack. See [local CI](LOCAL_CI.md) and [plan 0009](plans/0009-local-gitea-ci.md).
-
-REL-001 local packaging produces a versioned candidate for each MVP target and a SHA-256 manifest. The native candidate workflow tests those same ZIPs on the four MVP runners. See [plan 0006](plans/0006-mvp-candidate-packaging.md) for packaging, [plan 0007](plans/0007-native-candidate-verification.md) for candidate verification, and [plan 0008](plans/0008-mvp-go-notices.md) for bundled Go notices.
+The foundation and [Go decision](adr/0001-application-stack.md) established the stack. The MVP delivered status and changes in [plan 0002](plans/0002-go-mvp-status.md), followed by [compatibility and cancellation](plans/0003-mvp-cli-compatibility.md), [container testing](plans/0004-container-test-workflow.md) and [platform scope](plans/0005-mvp-platform-scope.md). The release process builds on [packaging](plans/0006-mvp-candidate-packaging.md), [native verification](plans/0007-native-candidate-verification.md), [Go notices](plans/0008-mvp-go-notices.md) and [local Gitea CI](plans/0009-local-gitea-ci.md).

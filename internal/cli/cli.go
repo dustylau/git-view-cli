@@ -5,97 +5,88 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 
 	gitview "git-view-cli/internal/git"
+	"golang.org/x/term"
 )
 
 // Version is set by the linker for packaged candidates.
-var Version = "0.1.0-dev"
+var Version = "1.0.0"
 
 type Reader func(context.Context, string) (gitview.Snapshot, error)
 
+var errUsage = errors.New("invalid request")
+
+type app struct {
+	in        io.Reader
+	out, diag io.Writer
+	terminal  bool
+	read      Reader
+}
+
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer, read Reader) int {
-	command, repo, err := parse(args)
+	outFile, ok := stdout.(*os.File)
+	terminal := ok && term.IsTerminal(int(outFile.Fd())) && term.IsTerminal(int(os.Stdin.Fd()))
+	a := app{os.Stdin, stdout, stderr, terminal, read}
+	r, err := parseRequest(args)
 	if err != nil {
 		diagnostic(stderr, err)
 		return 2
 	}
-	var output string
-	switch command {
-	case "help":
-		output = "Usage: git-view [--repo <directory>] [status|changes]\n\nCommands:\n  status   Show repository, branch, and change counts (default)\n  changes  Show index/worktree codes and quoted paths\n\nOptions:\n  --repo <directory>  Select a working tree (also accepted after command)\n  --help, -h         Show help\n  --version          Show version\n"
-	case "version":
-		output = "git-view " + Version + "\n"
-	default:
-		snapshot, err := read(ctx, repo)
-		if err != nil {
-			diagnostic(stderr, err)
-			switch {
-			case errors.Is(err, context.Canceled):
-				return 130
-			case errors.Is(err, gitview.ErrMissingGit), errors.Is(err, gitview.ErrNoWorktree):
-				return 2
-			default:
-				return 1
-			}
-		}
-		if command == "changes" {
-			output = renderChanges(snapshot)
-		} else {
-			output = renderStatus(snapshot)
-		}
+	err = a.execute(ctx, r)
+	if err == nil {
+		return 0
 	}
-	if _, err := io.WriteString(stdout, output); err != nil {
-		diagnostic(stderr, fmt.Errorf("write output: %w", err))
+	diagnostic(stderr, err)
+	switch {
+	case errors.Is(err, context.Canceled):
+		return 130
+	case errors.Is(err, errUsage), errors.Is(err, gitview.ErrMissingGit), errors.Is(err, gitview.ErrNoWorktree):
+		return 2
+	default:
 		return 1
 	}
-	return 0
+}
+
+func (a *app) execute(ctx context.Context, r request) error {
+	switch r.name {
+	case "help":
+		_, err := io.WriteString(a.out, helpText)
+		return err
+	case "version":
+		_, err := fmt.Fprintln(a.out, "git-view", Version)
+		return err
+	case "watch", "interactive", "edit", "resolve":
+		if !a.terminal {
+			return fmt.Errorf("%w: %s requires a terminal", errUsage, r.name)
+		}
+	}
+	s, err := a.read(ctx, r.repo)
+	if err != nil {
+		return err
+	}
+	w := gitview.Workspace{Repository: s.Repository, Runner: gitview.Process{}}
+	switch r.name {
+	case "stage", "unstage":
+		return a.index(ctx, w, s, r)
+	case "edit", "resolve":
+		return a.foreground(ctx, w, s, r)
+	case "watch", "interactive":
+		return a.session(ctx, r, s)
+	}
+	output, err := renderView(ctx, w, s, r)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(a.out, output)
+	return err
 }
 
 func diagnostic(out io.Writer, err error) {
 	_, _ = fmt.Fprintln(out, "git-view:", strconv.QuoteToGraphic(err.Error()))
-}
-
-func parse(args []string) (command, repo string, err error) {
-	command, repo = "status", "."
-	selected := ""
-	commandSeen := false
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		switch {
-		case arg == "--repo":
-			i++
-			if i >= len(args) || args[i] == "" || strings.HasPrefix(args[i], "-") {
-				return "", "", errors.New("--repo requires a directory; use --repo= for paths beginning with a dash")
-			}
-			repo = args[i]
-		case strings.HasPrefix(arg, "--repo="):
-			repo = strings.TrimPrefix(arg, "--repo=")
-			if repo == "" {
-				return "", "", errors.New("--repo requires a non-empty directory")
-			}
-		case arg == "--help" || arg == "-h":
-			selected = "help"
-		case arg == "--version":
-			selected = "version"
-		case strings.HasPrefix(arg, "-"):
-			return "", "", fmt.Errorf("unknown option %s; see --help", arg)
-		case arg == "status" || arg == "changes" || arg == "help":
-			if commandSeen {
-				return "", "", errors.New("expected one command; see --help")
-			}
-			command = arg
-			commandSeen = true
-		default:
-			return "", "", fmt.Errorf("unknown command or operand %s; see --help", arg)
-		}
-	}
-	if selected != "" {
-		command = selected
-	}
-	return command, repo, nil
 }
 
 func renderStatus(snapshot gitview.Snapshot) string {

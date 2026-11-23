@@ -8,6 +8,8 @@ import subprocess
 import tempfile
 import time
 
+from session_console import check_session
+
 
 def wait_for_git(ready):
     deadline = time.monotonic() + 5
@@ -128,6 +130,7 @@ def main():
             (git, "./tests/acceptance/testdata/slowgit"),
         ):
             subprocess.run(["go", "build", "-o", output, package], cwd=root, check=True)
+        check_session(binary, work)
         ready = work / "ready"
         env = dict(os.environ, PATH=str(work), GIT_VIEW_TEST_READY=str(ready))
         run = run_windows if windows else run_posix

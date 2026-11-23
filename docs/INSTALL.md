@@ -1,15 +1,15 @@
 # Install git-view from an archive
 
-Choose the ZIP for your operating system and architecture. Windows and Linux each have an amd64 archive for x86-64 systems and an arm64 archive for ARM systems. The CLI uses Git 2.43.0 or newer for repository inspection. Running a packaged binary requires Git on PATH.
+Choose the ZIP for your operating system and architecture. Windows and Linux each have an amd64 archive for x86-64 systems and an arm64 archive for ARM systems. Git View requires Git 2.43.0 or newer for repository inspection. Put Git on PATH. After extraction, add the executable's folder to PATH to use `git-view` from any checkout.
 
-The `licenses/go/` directory contains the Go toolchain's license and patent grant.
+Get the archive and `SHA256SUMS` from the same [Git View release](https://github.com/dustylau/git-view-cli/releases). The root `LICENSE` applies to Git View. The `licenses/go/` directory contains the Go copyright notice, license and patent grant. The terminal and system packages use the same Go license.
 
 ## Windows
 
 Run these commands from the folder containing the archive and `SHA256SUMS`. Replace the example archive name with the one you received.
 
 ```powershell
-$archive = 'git-view-0.1.0-rc.1-windows-amd64.zip'
+$archive = 'git-view-1.0.0-windows-amd64.zip'
 Get-FileHash -Algorithm SHA256 -LiteralPath $archive
 Get-Content SHA256SUMS | Select-String -SimpleMatch $archive
 ```
@@ -27,7 +27,7 @@ Expand-Archive -LiteralPath $archive -DestinationPath .\git-view
 Run these commands from the folder containing the archive and `SHA256SUMS`. Replace the example archive name with the one you received. Proceed if the checksum command reports that archive as `OK`.
 
 ```sh
-archive=git-view-0.1.0-rc.1-linux-amd64.zip
+archive=git-view-1.0.0-linux-amd64.zip
 sha256sum --ignore-missing --check SHA256SUMS
 unzip "$archive" -d ./git-view
 ./git-view/git-view --version
