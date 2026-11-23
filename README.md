@@ -31,6 +31,16 @@ py -3 tests/container/container_workflow.py --repo "D:\path\to\checkout"
 
 Use `python3` in place of `py -3` on Linux or macOS. See [container test details](docs/TESTING.md#container-build-and-test).
 
+## Run local CI and delivery
+
+With Docker running Linux containers, seed the current committed branch into Gitea and wait for the tested ZIPs and checksums.
+
+```powershell
+.\tools\ci\bootstrap.ps1 --wait
+```
+
+On Linux or WSL, run `sh tools/ci/bootstrap.sh --wait`. The local server starts at `http://127.0.0.1:3080`. See [local CI setup and downloads](docs/LOCAL_CI.md).
+
 ## Package a local MVP candidate
 
 With Go 1.27.4 and Python 3.9 or newer, run the packager from the checkout.

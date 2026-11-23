@@ -6,5 +6,6 @@ target/
 bin/
 __pycache__/
 .DS_Store
+.env
 Thumbs.db
 *.log

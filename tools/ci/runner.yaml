@@ -1,0 +1,12 @@
+runner:
+  capacity: 1
+  timeout: 20m
+
+cache:
+  enabled: false
+
+container:
+  network: ${LOCAL_CI_NETWORK}
+  docker_host: "-"
+  valid_volumes: []
+  force_pull: false

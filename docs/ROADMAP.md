@@ -33,4 +33,6 @@ M0 and the Go decision are complete. M2 tracks native validation through CLI-002
 
 DEV-001 provides a repeatable Linux container build and test workflow with seeded and host fixtures. See [plan 0004](plans/0004-container-test-workflow.md).
 
+DEV-002 runs CI and candidate delivery in a local Gitea Compose stack. See [local CI](LOCAL_CI.md) and [plan 0009](plans/0009-local-gitea-ci.md).
+
 REL-001 local packaging produces a versioned candidate for each MVP target and a SHA-256 manifest. The native candidate workflow tests those same ZIPs on the four MVP runners. See [plan 0006](plans/0006-mvp-candidate-packaging.md) for packaging, [plan 0007](plans/0007-native-candidate-verification.md) for candidate verification, and [plan 0008](plans/0008-mvp-go-notices.md) for bundled Go notices.

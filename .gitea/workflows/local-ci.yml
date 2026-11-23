@@ -1,0 +1,51 @@
+name: Local CI and delivery
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: local-ci
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          github-server-url: http://git:3000
+          persist-credentials: false
+      - name: Check toolchains and documentation
+        run: |
+          test ! -S /var/run/docker.sock
+          git --version
+          go version
+          npm ci
+          npm run check
+      - name: Analyze and test the CLI
+        run: |
+          test -z "$(gofmt -l cmd internal tests/acceptance)"
+          go mod verify
+          go vet ./...
+          go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+          go test -race -mod=readonly ./... -count=1
+          python3 -B -m unittest discover -s tests/container
+          python3 -B -m unittest discover -s tools/release
+          python3 -B -m unittest discover -s tools/ci
+          python3 tests/acceptance/terminal_smoke.py
+          git diff --check
+      - name: Build and verify the candidate
+        run: |
+          version="0.1.0-ci.$GITHUB_SHA"
+          python3 tools/release/package_release.py --version "$version"
+          GIT_VIEW_RELEASE_TEST=1 GIT_VIEW_RELEASE_VERSION="$version" \
+            GIT_VIEW_RELEASE_DIR="$PWD/dist/git-view-$version" \
+            go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v
+      - name: Deliver the verified ZIPs and checksums
+        uses: ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7 # Gitea-compatible v4
+        with:
+          name: git-view-candidate
+          path: dist/git-view-0.1.0-ci.${{ github.sha }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

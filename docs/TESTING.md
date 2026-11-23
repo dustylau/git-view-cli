@@ -86,6 +86,10 @@ After the [Release candidate workflow](../.github/workflows/release-candidate.ym
 
 Use the [packaging guide](../README.md#package-a-local-mvp-candidate) to generate files for local review and the [installation guide](INSTALL.md) to verify and run them. The candidate check complements the source-level compatibility checks in [plan 0003](plans/0003-mvp-cli-compatibility.md). See [plan 0007](plans/0007-native-candidate-verification.md) for actual candidate verification results.
 
+## Local pipeline acceptance
+
+Use the [local CI guide](LOCAL_CI.md) to run the pipeline from an ordinary checkout with Docker Compose as the host prerequisite. For the end-to-end regression, set `GIT_VIEW_LOCAL_CI_TEST=1` and run `go test ./tests/acceptance -run '^TestLocalPipeline$' -count=1 -timeout=25m -v`. This starts an isolated Compose project on a free loopback port, pushes a committed revision, verifies the delivered artifact over HTTP, and removes the test project's containers and volumes. The test selects `HEAD` by default. Set `GIT_VIEW_LOCAL_CI_REF` to verify a different committed revision that contains the workflow.
+
 ## Dependency review
 
 Production builds use only Go's standard library and installed Git. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.

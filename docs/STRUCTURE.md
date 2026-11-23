@@ -43,12 +43,15 @@ git-view-cli/
   .github/workflows/
     documentation.yml
     go.yml
+  .gitea/workflows/local-ci.yml
+  tools/ci/              # Docker job image, local provisioning and bootstrap
   tools/release/
     package_release.py
     test_package_release.py
   go.mod
   go.sum
   Dockerfile
+  compose.yaml
   .dockerignore
   package.json
   package-lock.json
