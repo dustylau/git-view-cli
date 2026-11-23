@@ -1,7 +1,7 @@
-Feature: Package a local MVP release candidate
+Feature: Verify an MVP release candidate
 
-  Scenario: Build a versioned candidate for all supported targets
-    When I package version "0.1.0-rc.1"
+  Scenario: Check a versioned candidate for all supported targets
+    When I select the release candidate
     Then the candidate archives cover exactly:
       | os      | arch  |
       | linux   | amd64 |
@@ -9,4 +9,5 @@ Feature: Package a local MVP release candidate
       | windows | amd64 |
       | windows | arm64 |
     And the checksum manifest verifies every archive
-    And the host executable reports version "0.1.0-rc.1"
+    And the host executable reports the requested version
+    And the host executable inspects a mixed-change worktree without changing it

@@ -33,4 +33,4 @@ M0 and the Go decision are complete. M2 tracks native validation through CLI-002
 
 DEV-001 provides a repeatable Linux container build and test workflow with seeded and host fixtures. See [plan 0004](plans/0004-container-test-workflow.md).
 
-REL-001 local packaging produces a versioned candidate for each MVP target and a SHA-256 manifest. See [plan 0006](plans/0006-mvp-candidate-packaging.md) for archive verification and open release gates.
+REL-001 local packaging produces a versioned candidate for each MVP target and a SHA-256 manifest. The native candidate workflow tests those same ZIPs on the four MVP runners. See [plan 0006](plans/0006-mvp-candidate-packaging.md) for packaging and [plan 0007](plans/0007-native-candidate-verification.md) for candidate verification and open gates.

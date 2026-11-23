@@ -25,18 +25,27 @@ func TestReleasePackaging(t *testing.T) {
 	if os.Getenv("GIT_VIEW_RELEASE_TEST") != "1" {
 		t.Skip("set GIT_VIEW_RELEASE_TEST=1 to build and inspect the candidate archives")
 	}
-	python, prefix := hostPython()
 	output := t.TempDir()
+	version := os.Getenv("GIT_VIEW_RELEASE_VERSION")
+	if version == "" {
+		version = "0.1.0-rc.1"
+	}
 	var candidate string
 	var native []byte
 	var checksums []string
+	installed := &fixture{binary: filepath.Join(output, executableName(runtime.GOOS)), cwd: output, env: cleanEnv()}
 	suite := godog.TestSuite{
 		Name: "release", Options: &godog.Options{
 			Format: "pretty", Paths: []string{"../features/release.feature"}, Strict: true, TestingT: t,
 		},
 		ScenarioInitializer: func(sc *godog.ScenarioContext) {
-			sc.Step(`^I package version "([^"]+)"$`, func(version string) error {
+			sc.Step(`^I select the release candidate$`, func() error {
+				if supplied := os.Getenv("GIT_VIEW_RELEASE_DIR"); supplied != "" {
+					candidate = supplied
+					return nil
+				}
 				candidate = filepath.Join(output, "git-view-"+version)
+				python, prefix := hostPython()
 				args := append(slices.Clone(prefix), "../../tools/release/package_release.py",
 					"--version", version, "--out", output)
 				if out, err := exec.Command(python, args...).CombinedOutput(); err != nil {
@@ -53,7 +62,7 @@ func TestReleasePackaging(t *testing.T) {
 				checksums = nil
 				for _, row := range table.Rows[1:] {
 					osName, arch := row.Cells[0].Value, row.Cells[1].Value
-					name := filepath.Base(candidate) + "-" + osName + "-" + arch + ".zip"
+					name := "git-view-" + version + "-" + osName + "-" + arch + ".zip"
 					wanted = append(wanted, name)
 					archive, err := os.ReadFile(filepath.Join(candidate, name))
 					if err != nil {
@@ -88,19 +97,50 @@ func TestReleasePackaging(t *testing.T) {
 				}
 				return nil
 			})
-			sc.Step(`^the host executable reports version "([^"]+)"$`, func(version string) error {
+			sc.Step(`^the host executable reports the requested version$`, func() error {
 				if len(native) == 0 {
 					return fmt.Errorf("no candidate executable for host %s/%s", runtime.GOOS, runtime.GOARCH)
 				}
-				binary := filepath.Join(output, executableName(runtime.GOOS))
-				if err := os.WriteFile(binary, native, 0o700); err != nil {
+				if err := os.WriteFile(installed.binary, native, 0o700); err != nil {
 					return err
 				}
-				cmd := exec.Command(binary, "--version")
-				cmd.Dir = output
-				out, err := cmd.CombinedOutput()
-				if err != nil || string(out) != "git-view "+version+"\n" {
-					return fmt.Errorf("candidate version output: %q (%v)", out, err)
+				if err := installed.run("version"); err != nil {
+					return err
+				}
+				if installed.code != 0 || installed.err.Len() != 0 || installed.out.String() != "git-view "+version+"\n" {
+					return fmt.Errorf("candidate version: exit %d, stdout %q, stderr %q", installed.code, &installed.out, &installed.err)
+				}
+				return nil
+			})
+			sc.Step(`^the host executable inspects a mixed-change worktree without changing it$`, func() error {
+				if err := installed.create(t, "mixed"); err != nil {
+					return err
+				}
+				for _, check := range []struct {
+					command string
+					lines   []string
+				}{
+					{"status", []string{`Branch: "main"`, "State: dirty", "Changes: staged 1, unstaged 2, untracked 1, conflicts 0"}},
+					{"changes", []string{`M M "tracked.txt"`, `. D "deleted.txt"`, `? ? "-new Ω file.txt"`}},
+				} {
+					if err := installed.run(check.command); err != nil {
+						return err
+					}
+					if installed.code != 0 || installed.err.Len() != 0 {
+						return fmt.Errorf("candidate %s: exit %d, stderr %q", check.command, installed.code, &installed.err)
+					}
+					for _, line := range check.lines {
+						if !strings.Contains(installed.out.String(), line+"\n") {
+							return fmt.Errorf("candidate %s: expected %q in %q", check.command, line, &installed.out)
+						}
+					}
+					after, err := snapshot(installed.root)
+					if err != nil {
+						return err
+					}
+					if !reflect.DeepEqual(after, installed.before) {
+						return fmt.Errorf("candidate %s changed the Git fixture", check.command)
+					}
 				}
 				return nil
 			})

@@ -1,0 +1,87 @@
+name: Release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Candidate version, for example 0.1.0-rc.1
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Build the four candidate archives
+        env:
+          CANDIDATE_VERSION: ${{ inputs.version }}
+        run: python3 tools/release/package_release.py --version "$CANDIDATE_VERSION"
+      - name: Upload the candidate and checksums
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: git-view-candidate-${{ github.run_attempt }}
+          path: dist/git-view-${{ inputs.version }}/
+          if-no-files-found: error
+          compression-level: 0
+
+  verify:
+    name: Verify candidate (${{ matrix.os }}/${{ matrix.arch }})
+    needs: package
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04, os: linux, arch: amd64 }
+          - { runner: ubuntu-24.04-arm, os: linux, arch: arm64 }
+          - { runner: windows-2025, os: windows, arch: amd64 }
+          - { runner: windows-11-arm, os: windows, arch: arm64 }
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Download the packaged candidate
+        id: download
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          path: ${{ runner.temp }}/git-view-candidate
+      - name: Verify checksums and exercise the extracted native binary
+        shell: pwsh
+        env:
+          EXPECTED_OS: ${{ matrix.os }}
+          EXPECTED_ARCH: ${{ matrix.arch }}
+          GIT_VIEW_RELEASE_TEST: "1"
+          GIT_VIEW_RELEASE_DIR: ${{ steps.download.outputs.download-path }}
+          GIT_VIEW_RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          go version
+          if ((go env GOHOSTOS) -ne $env:EXPECTED_OS -or (go env GOHOSTARCH) -ne $env:EXPECTED_ARCH) {
+            throw 'Expected a native Go toolchain for this matrix entry'
+          }
+          $gitVersion = git --version
+          Write-Output $gitVersion
+          if ($gitVersion -notmatch '^git version (\d+\.\d+\.\d+)' -or [version]$Matches[1] -lt [version]'2.43.0') {
+            throw 'Git 2.43.0 or newer is required'
+          }
+          if (-not $env:GIT_VIEW_RELEASE_DIR) {
+            throw 'The candidate download path is required'
+          }
+          go test ./tests/acceptance -run '^TestReleasePackaging$' -count=1 -v

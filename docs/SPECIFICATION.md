@@ -86,3 +86,9 @@ Release requires native test evidence and builds for `windows/amd64`, `windows/a
 - Build four ZIP archives for the MVP targets. Each contains its platform's executable and installation instructions. The executable reports the requested version and Linux archives preserve executable permissions.
 - Emit one SHA-256 manifest covering the four archives. Rebuilding from the same source and toolchain produces the same archive bytes. A failed build leaves no completed candidate directory and an existing candidate is preserved.
 - Local packaging provides inspectable artifacts. Native test results, licensing, distribution identity, and publication approval remain separate release gates.
+
+## REL-001 native candidate verification
+
+- A manually dispatched release-candidate workflow builds and uploads one four-archive candidate with its checksum manifest. Each of the four MVP native runners downloads that same workflow artifact. The workflow creates no release or tag.
+- Check the complete candidate manifest, archive names and contents, and executable architectures on each runner. Run the extracted executable for that runner with `--version`, `status`, and `changes`. Verify the requested version and expected results on a temporary mixed-change worktree and confirm the worktree and Git metadata contents are preserved.
+- The same checks accept an existing candidate directory on a local Windows or Linux machine. Missing, mismatched, or damaged artifacts fail verification without rebuilding the candidate.

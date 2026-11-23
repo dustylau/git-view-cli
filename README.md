@@ -41,6 +41,8 @@ py -3 tools/release/package_release.py --version 0.1.0-rc.1
 
 On Linux, use `python3` in place of `py -3`. The command writes four ZIP archives and `SHA256SUMS` to `dist/git-view-0.1.0-rc.1/`. Use `--out` to choose another parent directory. See [installation and upgrade instructions](docs/INSTALL.md) and the [candidate packaging plan](docs/plans/0006-mvp-candidate-packaging.md) for validation and release gates.
 
+The [candidate verification guide](docs/TESTING.md#release-candidate-packaging) describes checking an existing set locally or running the release-candidate workflow on the four MVP runners.
+
 ## Planned product capabilities
 
 - Monitor a local repository and display branch, upstream, and working state.
