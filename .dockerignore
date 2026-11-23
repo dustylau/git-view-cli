@@ -1,0 +1,14 @@
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/**/*.go
+!internal/
+!internal/**/*.go
+!tests/
+!tests/acceptance/
+!tests/acceptance/**/*.go
+!tests/features/
+!tests/features/*.feature
+!tests/container/
+!tests/container/*.sh

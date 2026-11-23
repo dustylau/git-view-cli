@@ -71,3 +71,10 @@ Deliver a read-only CLI for FR-002, FR-005, and FR-009, with NFR-002 through NFR
 - Verify NFR-004 with Ctrl+C during a pending Git read in a POSIX pseudo-terminal and an isolated Windows console. Expect exit 130, no status snapshot, and the immediate Git subprocess to be gone.
 - Measure warm one-shot `status` and `changes` from a built binary against a Git-only baseline on small and medium temporary repositories. The p95 budgets are 400 ms and 1 s respectively. Keep the fixture and measurement command reproducible.
 - Keep 0.1.0 output plain. Defer a JSON schema until it can contract path byte encoding and field evolution independently of the human-readable output.
+
+## DEV-001 container build and test
+
+- Build the CLI and prepare the Go test suite in a pinned Linux image. Keep repository data, local Git metadata, and build output out of the build context.
+- By default, each run creates its own Docker volume. Seed an initial commit and staged, unstaged, and untracked changes. Inspect that volume read-only with the built CLI and verify the expected changes. Remove the volume after the run, including when seeding or tests fail.
+- Accept an existing host checkout as the fixture through an explicit read-only bind mount. Run status and changes on that checkout and surface Git or startup failures. Apply the ownership exception for the mounted path only and keep it inside the test container.
+- Both modes run the Go test suite with the race detector in a network-disabled Linux container. The different container filesystem and Git build provide Linux evidence under NFR-001 and NFR-002. Native macOS, Windows, and architecture validation follow the release gates.

@@ -20,6 +20,17 @@ Build with `go build -o bin/git-view ./cmd/git-view` on macOS/Linux, or `go buil
 
 Status discovers the worktree from the current or selected directory and reports branch/upstream and separate staged, unstaged, untracked, and conflict counts. Changes shows index/worktree codes and quoted root-relative paths, including renames. Reads are bounded, suppress optional index locks, and do not fetch or stage. See the [CLI contract](docs/CLI.md) for output, limits, escaping, and exit codes.
 
+## Build and test with Docker
+
+With Docker running Linux containers and Python 3.9 or newer, run these commands from the checkout. The first command builds the image and runs the CLI and Go tests with a fresh seeded Git volume. The second checks an existing repository through a read-only bind mount.
+
+```powershell
+py -3 tests/container/container_workflow.py
+py -3 tests/container/container_workflow.py --repo "D:\path\to\checkout"
+```
+
+Use `python3` in place of `py -3` on Linux or macOS. See [container test details](docs/TESTING.md#container-build-and-test).
+
 ## Planned product capabilities
 
 - Monitor a local repository and display branch, upstream, and working state.

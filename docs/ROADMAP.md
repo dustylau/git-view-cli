@@ -30,3 +30,5 @@ Ship vertical slices rather than implementing all parsing, then all UI, then all
 3. **REL-001:** choose license and final executable/module/distribution identity; produce amd64/arm64 artifacts and checksums, review dependencies, document install/upgrade, and obtain release approval. Publish 0.1.0 only after native runtime gates pass. This task does not publish.
 
 M0 and the Go decision are complete. M2 tracks native validation through CLI-002. M3 through M6 follow the MVP.
+
+DEV-001 provides a repeatable Linux container build and test workflow with seeded and host fixtures. See [plan 0004](plans/0004-container-test-workflow.md).

@@ -49,6 +49,24 @@ Run the terminal check on Windows with `py -3 tests/acceptance/terminal_smoke.py
 
 Run `py -3 tests/acceptance/measure_cli.py` on Windows or `python3 tests/acceptance/measure_cli.py` on macOS/Linux. It times 20 subprocess invocations after three warmups per command on each fixture, and includes the equivalent Git query as a baseline. It reports median and p95 and checks the 400 ms small-fixture and 1 s medium-fixture p95 budgets. CI keeps timing separate from the correctness gates because runner load varies.
 
+## Container build and test
+
+Use Docker Engine 25 or newer with Linux containers and Python 3.9 or newer on the host. Docker Desktop must have access to any host path you choose to mount. Run from the project checkout.
+
+```sh
+python3 tests/container/container_workflow.py
+python3 tests/container/container_workflow.py --repo "/path/to/existing checkout"
+```
+
+On Windows, use `py -3` instead of `python3` and a Windows path such as `D:\Development\git-view-cli`. Use paths visible to the shell running the command and its local Docker Engine. From WSL, use Linux paths such as `/mnt/d/Development/git-view-cli`.
+
+Every run builds or reuses cached layers for `git-view:test`. The build copies Go source and test files into a pinned Go 1.27.4 image. The first build downloads the base image and Go modules. The mounted repository is supplied at runtime. Both fixture modes run with the network disabled, print `status` and `changes`, and run `go test -race -mod=readonly ./... -count=1`.
+
+- **Seeded volume.** The runner creates a new named volume, seeds a commit and mixed changes, then mounts the resulting checkout read-only at `/repo`. It asserts the expected output and removes the volume after success or an ordinary test failure. The image tag and build cache remain available.
+- **Host checkout.** Supply a worktree root with Git metadata available within that directory. The runner mounts it read-only at `/repo` and permits that path through Git's ownership check for the test process only. Checkout layouts that rely on Git directories or nested mounts outside the selected root require the seeded mode or a standalone checkout.
+
+Run the host-side runner tests with `python3 -B -m unittest discover -s tests/container`. To run the two real Docker acceptance scenarios, set `GIT_VIEW_CONTAINER_TEST=1` and run `go test ./tests/acceptance -run '^TestContainerWorkflow$' -count=1 -v`. The tests check seeded cleanup and compare the host fixture's worktree and Git metadata before and after. This workflow supplies Linux container evidence. Native platform gates are tracked in [plan 0003](plans/0003-mvp-cli-compatibility.md).
+
 ## Dependency review
 
 Production builds use only Go's standard library and installed Git. Godog v0.16.0 is a test dependency (MIT, no cgo); its transitive graph is recorded in `go.mod`/`go.sum`. Staticcheck v0.8.2 and govulncheck v1.10.0 run at pinned versions without becoming application dependencies. Run `go mod tidy`, `go mod verify`, and the pinned vulnerability command when changing the Go graph. Advisory results are time-specific, not permanent guarantees.

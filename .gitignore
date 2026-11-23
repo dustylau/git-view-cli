@@ -4,6 +4,7 @@ reports/
 dist/
 target/
 bin/
+__pycache__/
 .DS_Store
 Thumbs.db
 *.log

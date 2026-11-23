@@ -16,8 +16,14 @@ git-view-cli/
       terminal_smoke.py
       measure_cli.py
       testdata/slowgit/main.go
+    container/
+      container_workflow.py
+      seed.sh
+      check.sh
+      test_workflow.py
     features/
       cli.feature
+      container.feature
       documentation.feature
     steps/documentation.mjs
   docs/
@@ -36,6 +42,8 @@ git-view-cli/
     go.yml
   go.mod
   go.sum
+  Dockerfile
+  .dockerignore
   package.json
   package-lock.json
 ```
@@ -47,6 +55,7 @@ git-view-cli/
 | `internal/git/`            | Repository identity/status model, direct bounded Git calls, NUL-delimited porcelain-v2 parsing. |
 | `tests/acceptance/`        | Godog bindings, temporary Git fixtures, terminal smoke test, and performance measurement.       |
 | `tests/features/`          | Executable Gherkin specifications for the CLI and project documentation.                        |
+| `tests/container/`         | Docker build runner, mount lifecycle tests, and scripts for the mounted Git checks.             |
 | `tests/steps/`             | Node-based documentation bindings only.                                                         |
 | `tests/fixtures/`          | Reserved for future captured samples; current repository fixtures use temporary paths.          |
 | `docs/templates/`          | Implementation-plan template for the mandatory workflow.                                        |
